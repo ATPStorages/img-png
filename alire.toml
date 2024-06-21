@@ -1,0 +1,10 @@
+name = "png"
+description = "PNG (de)/(en)coder tools"
+version = "0.1.0-dev"
+
+authors = ["Miko Elbrecht"]
+maintainers = ["Miko Elbrecht <pmt.mailservice@gmail.com>"]
+maintainers-logins = ["ATPStorages"]
+licenses = "GPL-3.0-or-later"
+website = "https://javart.zip"
+tags = ["png", "decoder", "encoder", "coder", "file", "format", "reader", "writer"]
