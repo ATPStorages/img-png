@@ -4,6 +4,7 @@ with System; use System;
 with IHDR;
 with PLTE;
 with IDAT;
+with tIME;
 with bKGD;
 with pHYs;
 with tEXt;
@@ -106,6 +107,9 @@ package body PNG is
                when 16#49454E44# =>
                   Stream_Ended := True;
                   goto NoDecode;
+
+               when 16#74494D45# =>
+                  Constructed_Chunk.Data.Info := new tIME.Chunk_Data_Info;
 
                when 16#624B4744# =>
                   Constructed_Chunk.Data.Info := new bKGD.Chunk_Data_Info;
