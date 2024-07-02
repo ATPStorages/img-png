@@ -7,6 +7,7 @@ with IDAT;
 with tIME;
 with bKGD;
 with pHYs;
+with iTXt;
 with tEXt;
 with eXIf;
 with acTL;
@@ -115,6 +116,8 @@ package body PNG is
                   Constructed_Chunk.Data.Info := new bKGD.Chunk_Data_Info;
                when 16#70485973# =>
                   Constructed_Chunk.Data.Info := new pHYs.Chunk_Data_Info;
+               when 16#69545874# =>
+                  Constructed_Chunk.Data.Info := new iTXt.Chunk_Data_Info;
                when 16#74455874# =>
                   Constructed_Chunk.Data.Info := new tEXt.Chunk_Data_Info;
                when 16#65584966# =>

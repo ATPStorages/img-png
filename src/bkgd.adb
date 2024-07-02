@@ -16,7 +16,7 @@ package body bKGD is
    end Read;
    
    overriding procedure Decode (Self : in out Chunk_Data_Info; 
-                                S : Stream_Access; 
+                                S : Stream_Access;
                                 C : PNG.Chunk; 
                                 V : PNG.Chunk_Vectors.Vector;
                                 F : File_Type) is
