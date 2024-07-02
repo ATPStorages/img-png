@@ -1,8 +1,10 @@
+with Ada.Characters.Latin_1;
 with Ada.Text_IO;
 with System; use System;
 with IHDR;
 with PLTE;
 with IDAT;
+with bKGD;
 with pHYs;
 with tEXt;
 with eXIf;
@@ -24,6 +26,23 @@ package body PNG is
    end Chunk_Equal_Element;
 
    --== File Operations ==--
+
+   function Decode_Null_String (S : Stream_Access) return Unbounded_String is
+      New_String     : Unbounded_String;
+      Read_Character : Character;
+   begin
+      while True loop
+         Character'Read (S, Read_Character);
+
+         if Read_Character = Ada.Characters.Latin_1.NUL then
+            exit;
+         else
+            Append (New_String, Read_Character);
+         end if;
+      end loop;
+
+      return New_String;
+   end Decode_Null_String;
 
    function CheckBit5 (N : Unsigned_8) return Boolean
    is
@@ -88,6 +107,8 @@ package body PNG is
                   Stream_Ended := True;
                   goto NoDecode;
 
+               when 16#624B4744# =>
+                  Constructed_Chunk.Data.Info := new bKGD.Chunk_Data_Info;
                when 16#70485973# =>
                   Constructed_Chunk.Data.Info := new pHYs.Chunk_Data_Info;
                when 16#74455874# =>

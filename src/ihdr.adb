@@ -17,13 +17,13 @@ package body IHDR is
       PNG.Unsigned_31_ByteFlipper.FlipBytesBE (Self.Width);
       PNG.Unsigned_31_ByteFlipper.FlipBytesBE (Self.Height);
 
-      Put_Line ("      IHDR Width             :" & Self.Width'Image);
-      Put_Line ("      IHDR Height            :" & Self.Height'Image);
-      Put_Line ("      IHDR Bit Depth         :" & Self.BitDepth'Image);
-      Put_Line ("      IHDR Color Type        :" & Self.ColorType'Image);
-      Put_Line ("      IHDR Compression Method:" & Self.CompressionMethod'Image);
-      Put_Line ("      IHDR Filter Method     :" & Self.FilterMethod'Image);
-      Put_Line ("      IHDR Interlace Method  :" & Self.InterlaceMethod'Image);
+      Put_Line ("      IHDR Width              :"  & Self.Width'Image);
+      Put_Line ("      IHDR Height             :"  & Self.Height'Image);
+      Put_Line ("      IHDR Bit Depth          :"  & Self.BitDepth'Image);
+      Put_Line ("      IHDR Color Type         : " & Self.ColorType'Image);
+      Put_Line ("      IHDR Compression Method :"  & Self.CompressionMethod'Image);
+      Put_Line ("      IHDR Filter Method      :"  & Self.FilterMethod'Image);
+      Put_Line ("      IHDR Interlace Method   :"  & Self.InterlaceMethod'Image);
    end Decode;
 
 end IHDR;

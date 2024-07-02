@@ -1,3 +1,4 @@
+with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with Ada.Containers; use Ada.Containers;
 with Ada.Containers.Indefinite_Vectors;
 with Ada.Streams.Stream_IO; use Ada.Streams.Stream_IO;
@@ -83,6 +84,8 @@ package PNG is
 
    package Unsigned_64_ByteFlipper is new
      ByteFlip (Modular_Type => Unsigned_64);
+
+   function Decode_Null_String (S : Stream_Access) return Unbounded_String;
 
    --== PNG File Defintion ==--
 
