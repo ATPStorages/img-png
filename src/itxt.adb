@@ -30,9 +30,6 @@ package body iTXt is
       declare
          Text : String (1 .. Natural (C.Length) - Natural (Last_File_Position - Start_File_Position));
       begin
-         Ada.Text_IO.Put_Line (Natural (Last_File_Position - Start_File_Position)'Image);
-         Ada.Text_IO.Put_Line (Natural (C.Length)'Image);
-         
          String'Read (S, Text);
          Append (Self.Text, Text);
       end;

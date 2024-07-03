@@ -5,6 +5,7 @@ with IHDR;
 with PLTE;
 with IDAT;
 with tIME;
+with iCCP;
 with bKGD;
 with pHYs;
 with iTXt;
@@ -111,6 +112,8 @@ package body PNG is
 
                when 16#74494D45# =>
                   Constructed_Chunk.Data.Info := new tIME.Chunk_Data_Info;
+               when 16#69434350# =>
+                  Constructed_Chunk.Data.Info := new iCCP.Chunk_Data_Info;
 
                when 16#624B4744# =>
                   Constructed_Chunk.Data.Info := new bKGD.Chunk_Data_Info;
