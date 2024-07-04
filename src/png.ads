@@ -4,7 +4,6 @@ with Ada.Containers.Indefinite_Vectors;
 with Ada.Streams.Stream_IO; use Ada.Streams.Stream_IO;
 with Interfaces; use Interfaces;
 with ByteFlip;
-with System; use System;
 
 package PNG is
 
@@ -24,15 +23,17 @@ package PNG is
 
    type Unsigned_31 is mod 2 ** 31
      with Size => 32;
-   subtype Unsigned_31_Positive is PNG.Unsigned_31 range 1 .. PNG.Unsigned_31'Last;
+   subtype Unsigned_31_Positive is
+     PNG.Unsigned_31 range 1 .. PNG.Unsigned_31'Last;
 
    type Chunk_Data_Array is array (Unsigned_31 range <>) of Unsigned_8;
 
-   type Chunk_Data_Info is tagged null record;
-   type Chunk_Data_Info_Access is access all Chunk_Data_Info'Class;
+   type Base_Chunk_Data_Definition is abstract tagged null record;
+   type Base_Chunk_Data_Access is
+     access all Base_Chunk_Data_Definition'Class;
 
    type Chunk_Data is record
-      Info : Chunk_Data_Info_Access;
+      Info : Base_Chunk_Data_Access;
    end record;
 
    type Chunk (Length : Unsigned_31) is record
@@ -48,26 +49,33 @@ package PNG is
        (Index_Type => Natural,
         Element_Type => Chunk);
 
-   procedure Decode (Self : in out Chunk_Data_Info;
+   function Chunk_Count (V : Chunk_Vectors.Vector;
+                         ChunkType : Chunk_Type) return Natural;
+
+   procedure Decode (Self : in out Base_Chunk_Data_Definition;
                      S : Stream_Access;
-                     C : Chunk;
+                     C : PNG.Chunk;
                      V : Chunk_Vectors.Vector;
-                     F : File_Type);
+                     F : File_Type)
+   is abstract;
 
    --== File Reading ==--
 
    --= Exceptions =--
 
-   --  There's a chunk with a wrong size where it is defined in the specification.
+   --  There's a chunk with a wrong size where it is defined in the
+   --  specification.
    BAD_CHUNK_SIZE_ERROR : exception;
 
-   --  There's a problem with the first 4 bytes of the PNG stream; they don't line up with PNG.Signature.
+   --  There's a problem with the first 4 bytes of the PNG stream;
+   --  they don't line up with PNG.Signature.
    BAD_SIGNATURE_ERROR : exception;
 
    --  There's a second chunk where only one chunk of a certain type may exist.
    DUPLICATE_CHUNK_ERROR : exception;
 
-   --  There's a problem with the structure of the PNG stream (i.e. no IHDR at the start, no IEND at the end)
+   --  There's a problem with the structure of the PNG stream
+   --  (i.e. no IHDR at the start, no IEND at the end)
    BAD_STRUCTURE_ERROR : exception;
 
    --  There's an unrecognized non-ancillary chunk which cannot be skipped over
@@ -93,7 +101,8 @@ package PNG is
       Chunks : Chunk_Vectors.Vector;
    end record;
 
-   --  Reads an image from a PNG file. This will not close the provided stream after finishing.
+   --  Reads an image from a PNG file.
+   --  This will not close the provided stream after finishing.
    function  Read  (F : File_Type; S : Stream_Access) return File;
    procedure Write (F : File;  S : Stream_Access);
 end PNG;
