@@ -21,6 +21,9 @@ package PNG is
       SafeToCopy    : Boolean;
    end record;
 
+   function Create_Type_Info (Raw : Chunk_Type)
+                              return Chunk_Type_Info;
+
    type Unsigned_31 is mod 2 ** 31
      with Size => 32;
    subtype Unsigned_31_Positive is
@@ -42,7 +45,8 @@ package PNG is
       CRC32    : Unsigned_32;
    end record;
 
-   function Chunk_Equal_Element (A, B : Chunk) return Boolean;
+   function Chunk_Equal_Element (A, B : Chunk)
+                                 return Boolean;
 
    package Chunk_Vectors is new
      Ada.Containers.Indefinite_Vectors
@@ -50,7 +54,8 @@ package PNG is
         Element_Type => Chunk);
 
    function Chunk_Count (V : Chunk_Vectors.Vector;
-                         ChunkType : Chunk_Type) return Natural;
+                         ChunkType : Chunk_Type)
+                         return Natural;
 
    procedure Decode (Self : in out Base_Chunk_Data_Definition;
                      S : Stream_Access;
@@ -93,7 +98,8 @@ package PNG is
    package Unsigned_64_ByteFlipper is new
      ByteFlip (Modular_Type => Unsigned_64);
 
-   function Decode_Null_String (S : Stream_Access) return Unbounded_String;
+   function Decode_Null_String (S : Stream_Access)
+                                return Unbounded_String;
 
    --== PNG File Defintion ==--
 
@@ -103,6 +109,7 @@ package PNG is
 
    --  Reads an image from a PNG file.
    --  This will not close the provided stream after finishing.
-   function  Read  (F : File_Type; S : Stream_Access) return File;
+   function  Read  (F : File_Type; S : Stream_Access)
+                    return File;
    procedure Write (F : File;  S : Stream_Access);
 end PNG;

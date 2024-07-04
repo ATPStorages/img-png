@@ -10,7 +10,7 @@ with pHYs;
 with iTXt;
 with tEXt;
 with eXIf;
---  with acTL;
+with acTL;
 with fcTL;
 with fdAT;
 
@@ -35,6 +35,17 @@ package body PNG is
 
       return Count;
    end Chunk_Count;
+
+   function Create_Type_Info (Raw : Chunk_Type) return Chunk_Type_Info
+   is
+      NewTypeInfo : Chunk_Type_Info;
+   begin
+      NewTypeInfo.Raw           := Raw;
+      NewTypeInfo.Ancillary     := CheckBit5 (Unsigned_8 (Shift_Right (Constructed_Chunk.TypeInfo.Raw, 24) rem 2 ** 8));
+      NewTypeInfo.Specification := CheckBit5 (Unsigned_8 (Shift_Right (Constructed_Chunk.TypeInfo.Raw, 16) rem 2 ** 8));
+      NewTypeInfo.Reserved      := CheckBit5 (Unsigned_8 (Shift_Right (Constructed_Chunk.TypeInfo.Raw,  8) rem 2 ** 8));
+      NewTypeInfo.SafeToCopy    := CheckBit5 (Unsigned_8              (Constructed_Chunk.TypeInfo.Raw      rem 2 ** 8));
+   end Create_Type_Info;
 
    --== File Operations ==--
 
@@ -80,7 +91,8 @@ package body PNG is
       Stream_Signature : Unsigned_64;
       Stream_Ended     : Boolean := False;
 
-      Chnk_Length : Unsigned_31;
+      IHDR_Present : Boolean := False;
+      Chnk_Length  : Unsigned_31;
 
       Constructed_Chunks   : Chunk_Vectors.Vector;
       Constructed_PNG_File : constant File :=
@@ -109,21 +121,33 @@ package body PNG is
             Computed_CRC32          : Unsigned_32;
             Constructed_Chunk       : Chunk (Chnk_Length);
          begin
-            Chunk_Type'Read (S, Constructed_Chunk.TypeInfo.Raw);
-            Unsigned_32_ByteFlipper.FlipBytesBE (Constructed_Chunk.TypeInfo.Raw);
+            Chunk_Type'Read
+              (S, Constructed_Chunk.TypeInfo.Raw);
+            Unsigned_32_ByteFlipper.FlipBytesBE
+              (Constructed_Chunk.TypeInfo.Raw);
 
-            Constructed_Chunk.TypeInfo.Ancillary     := CheckBit5 (Unsigned_8 (Shift_Right (Constructed_Chunk.TypeInfo.Raw, 24) rem 2 ** 8));
-            Constructed_Chunk.TypeInfo.Specification := CheckBit5 (Unsigned_8 (Shift_Right (Constructed_Chunk.TypeInfo.Raw, 16) rem 2 ** 8));
-            Constructed_Chunk.TypeInfo.Reserved      := CheckBit5 (Unsigned_8 (Shift_Right (Constructed_Chunk.TypeInfo.Raw, 8) rem 2 ** 8));
-            Constructed_Chunk.TypeInfo.SafeToCopy    := CheckBit5 (Unsigned_8              (Constructed_Chunk.TypeInfo.Raw      rem 2 ** 8));
+            Constructed_Chunk.TypeInfo :=
+              Create_Type_Info (Constructed_Chunk.TypeInfo.Raw);
+
+            if
+              IHDR_Present = False and
+              Constructed_Chunks.Length > 0 and
+              Chunk_Count (V, IHDR.TypeTag.Raw) = 0
+            then
+               raise BAD_STRUCTURE_ERROR
+                 with "The IHDR chunk must come first in a PNG datastream";
+            end if;
 
             case Constructed_Chunk.TypeInfo.Raw is
                when 16#49484452# =>
                   Constructed_Chunk.Data.Info := new IHDR.Chunk_Data_Info;
+                  IHDR_Present := True;
                when 16#504C5445# =>
-                  Constructed_Chunk.Data.Info := new PLTE.Chunk_Data_Info (Chnk_Length, Chnk_Length / 3);
+                  Constructed_Chunk.Data.Info := new PLTE.Chunk_Data_Info
+                    (Chnk_Length, Chnk_Length / 3);
                when 16#49444154# =>
-                  Constructed_Chunk.Data.Info := new IDAT.Chunk_Data_Info (Chnk_Length);
+                  Constructed_Chunk.Data.Info := new IDAT.Chunk_Data_Info
+                    (Chnk_Length);
                when 16#49454E44# =>
                   Stream_Ended := True;
                   goto NoDecode;
@@ -144,18 +168,16 @@ package body PNG is
                when 16#65584966# =>
                   Constructed_Chunk.Data.Info := new eXIf.Chunk_Data_Info;
 
-               --  when 16#6163544C# => --  APNG related chunks
-                  --  Constructed_Chunk.Data.Info := new acTL.Chunk_Data_Info;
+               when 16#6163544C# => --  APNG related chunks
+                  Constructed_Chunk.Data.Info := new acTL.Chunk_Data_Info;
                when 16#6663544C# =>
                   Constructed_Chunk.Data.Info := new fcTL.Chunk_Data_Info;
                when 16#66644154# =>
-                  Constructed_Chunk.Data.Info := new fdAT.Chunk_Data_Info (Chnk_Length - (Unsigned_31'Size / 8));
+                  Constructed_Chunk.Data.Info := new fdAT.Chunk_Data_Info
+                    (Chnk_Length - (Unsigned_31'Size / 8));
 
                when others =>
-                  if Constructed_Chunks.Length = 0 then
-                     raise BAD_STRUCTURE_ERROR
-                       with "A valid PNG stream must contain the IHDR chunk first";
-                  elsif not Constructed_Chunk.TypeInfo.Ancillary then
+                  if not Constructed_Chunk.TypeInfo.Ancillary then
                      raise UNRECOGNIZED_CRITICAL_CHUNK_ERROR;
                   end if;
 

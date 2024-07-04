@@ -3,21 +3,23 @@ with Interfaces; use Interfaces;
 with PNG;
 
 package IHDR is
-   
-   type ColorTypes is (GRAYSCALE, 
-                       TRUECOLOR, 
-                       INDEXED_COLOR, 
-                       GRAYSCALE_WITH_ALPHA, 
+
+   TypeTag : PNG.Chunk_Type_Info := PNG.Create_Type_Info (16#49484452#);
+
+   type ColorTypes is (GRAYSCALE,
+                       TRUECOLOR,
+                       INDEXED_COLOR,
+                       GRAYSCALE_WITH_ALPHA,
                        TRUECOLOR_WITH_ALPHA)
      with Size => 8;
-   
+
    for ColorTypes use (GRAYSCALE => 0,
                        TRUECOLOR => 2,
                        INDEXED_COLOR => 3,
                        GRAYSCALE_WITH_ALPHA => 4,
                        TRUECOLOR_WITH_ALPHA => 6);
-   
-   type Chunk_Data_Info is new PNG.Chunk_Data_Info with record
+
+   type Data_Definition is new PNG.Base_Chunk_Data_Definition with record
       Width             : PNG.Unsigned_31_Positive;
       --  Width of the image.
       Height            : PNG.Unsigned_31_Positive;
@@ -30,8 +32,10 @@ package IHDR is
       InterlaceMethod   : Unsigned_8 range 0 .. 1;
    end record;
 
-   type Chunk_Data_Info_Access is access all Chunk_Data_Info;
-   
-   overriding procedure Decode (Self : in out Chunk_Data_Info; S : Stream_Access; C : PNG.Chunk; V : PNG.Chunk_Vectors.Vector; F : Ada.Streams.Stream_IO.File_Type);
+   overriding procedure Decode (Self : in out Data_Definition;
+                                S : Stream_Access;
+                                C : PNG.Chunk;
+                                V : PNG.Chunk_Vectors.Vector;
+                                F : Ada.Streams.Stream_IO.File_Type);
 
 end IHDR;

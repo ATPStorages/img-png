@@ -1,29 +1,27 @@
 with Ada.Containers; use Ada.Containers;
-with Ada.Text_IO; use Ada.Text_IO;
 with PNG; use PNG;
 
 package body IHDR is
 
-   overriding procedure Decode (Self : in out Chunk_Data_Info; S : Stream_Access; C : PNG.Chunk; V : PNG.Chunk_Vectors.Vector; F : Ada.Streams.Stream_IO.File_Type) is
+   overriding procedure Decode (Self : in out Data_Definition;
+                                S : Stream_Access;
+                                C : PNG.Chunk;
+                                V : PNG.Chunk_Vectors.Vector;
+                                F : Ada.Streams.Stream_IO.File_Type)
+   is
    begin
       if C.Length /= 13 then
-         raise PNG.BAD_CHUNK_SIZE_ERROR with "IHDR size of (" & C.Length'Image & " ) bytes incorrect, should be 13";
+         raise PNG.BAD_CHUNK_SIZE_ERROR
+         with "IHDR size of" & C.Length'Image & " bytes incorrect, must be 13";
       elsif V.Length > 0 then
-         raise PNG.DUPLICATE_CHUNK_ERROR with "A valid PNG stream must contain only 1 IHDR chunk";
+         raise PNG.DUPLICATE_CHUNK_ERROR
+         with "Only 1 IHDR chunk can be in a PNG datastream";
       end if;
 
-      Chunk_Data_Info'Read (S, Self);
+      Data_Definition'Read (S, Self);
 
       PNG.Unsigned_31_ByteFlipper.FlipBytesBE (Self.Width);
       PNG.Unsigned_31_ByteFlipper.FlipBytesBE (Self.Height);
-
-      Put_Line ("      IHDR Width              :"  & Self.Width'Image);
-      Put_Line ("      IHDR Height             :"  & Self.Height'Image);
-      Put_Line ("      IHDR Bit Depth          :"  & Self.BitDepth'Image);
-      Put_Line ("      IHDR Color Type         : " & Self.ColorType'Image);
-      Put_Line ("      IHDR Compression Method :"  & Self.CompressionMethod'Image);
-      Put_Line ("      IHDR Filter Method      :"  & Self.FilterMethod'Image);
-      Put_Line ("      IHDR Interlace Method   :"  & Self.InterlaceMethod'Image);
    end Decode;
 
 end IHDR;
