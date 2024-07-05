@@ -19,11 +19,11 @@ package PNG is
 
    subtype Chunk_Type is Unsigned_32;
    type Chunk_Type_Info is record
-      Raw           : Chunk_Type;
-      Ancillary     : Boolean;
-      Specification : Boolean;
-      Reserved      : Boolean;
-      SafeToCopy    : Boolean;
+      Raw        : Chunk_Type;
+      Ancillary  : Boolean;
+      PrivateUse : Boolean;
+      Reserved   : Boolean;
+      SafeToCopy : Boolean;
    end record;
 
    procedure Create_Type_Info (Info : out Chunk_Type_Info;
@@ -73,7 +73,7 @@ package PNG is
    --= Exceptions =--
 
    --  There's a chunk with a wrong size where it is defined in the
-   --  specification.
+   --  PrivateUse.
    BAD_CHUNK_SIZE_ERROR : exception;
 
    --  There's a problem with the first 4 bytes of the PNG stream;

@@ -50,7 +50,7 @@ package body PNG is
    begin
       Info.Raw           := Raw;
       Info.Ancillary     := CheckBit5 (Unsigned_8 (Shr (RawH, 24) rem 2 ** 8));
-      Info.Specification := CheckBit5 (Unsigned_8 (Shr (RawH, 16) rem 2 ** 8));
+      Info.PrivateUse := CheckBit5 (Unsigned_8 (Shr (RawH, 16) rem 2 ** 8));
       Info.Reserved      := CheckBit5 (Unsigned_8 (Shr (RawH,  8) rem 2 ** 8));
       Info.SafeToCopy    := CheckBit5 (Unsigned_8      (Raw      rem 2 ** 8));
    end Create_Type_Info;
