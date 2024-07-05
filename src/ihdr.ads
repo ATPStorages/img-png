@@ -4,7 +4,7 @@ with PNG;
 
 package IHDR is
 
-   TypeTag : PNG.Chunk_Type_Info := PNG.Create_Type_Info (16#49484452#);
+   TypeRaw : constant PNG.Chunk_Type := 16#49484452#;
 
    type ColorTypes is (GRAYSCALE,
                        TRUECOLOR,
