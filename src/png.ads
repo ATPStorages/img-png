@@ -12,6 +12,11 @@ package PNG is
 
    --== Chunk Base Defintions ==--
 
+   type Compression_Method is (DEFLATE)
+     with Size => 8;
+
+   for Compression_Method use (DEFLATE => 0);
+
    subtype Chunk_Type is Unsigned_32;
    type Chunk_Type_Info is record
       Raw           : Chunk_Type;
@@ -33,12 +38,12 @@ package PNG is
 
    type Chunk_Data_Array is array (Unsigned_31 range <>) of Unsigned_8;
 
-   type Base_Chunk_Data_Definition is abstract tagged null record;
-   type Base_Chunk_Data_Access is
-     access all Base_Chunk_Data_Definition'Class;
+   type Chunk_Data_Definition is tagged null record;
+   type Chunk_Data_Access is
+     access all Chunk_Data_Definition'Class;
 
    type Chunk_Data is record
-      Info : Base_Chunk_Data_Access;
+      Info : Chunk_Data_Access;
    end record;
 
    type Chunk (Length : Unsigned_31) is record
@@ -59,7 +64,7 @@ package PNG is
                          ChunkType : Chunk_Type)
                          return Natural;
 
-   procedure Decode (Self : in out Base_Chunk_Data_Definition;
+   procedure Decode (Self : in out Chunk_Data_Definition;
                      S : Stream_Access;
                      C : PNG.Chunk;
                      V : Chunk_Vectors.Vector;
@@ -100,11 +105,10 @@ package PNG is
      ByteFlip (Modular_Type => Unsigned_64);
 
    function Decode_Null_String (S : Stream_Access;
-                                Offset : out Natural)
+                                Offset : in out Natural)
                                 return Unbounded_String;
 
-   function Decode_String_Chunk_End (S              : Stream_Access;
-                                     F              : File_Type;
+   function Decode_String_Chunk_End (S : Stream_Access;
                                      Length, Offset : Natural)
                                      return String;
 

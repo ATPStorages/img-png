@@ -4,27 +4,27 @@ with PNG;
 
 package fcTL is
 
-   type DisposalOperations is (APNG_DISPOSE_OP_NONE, 
-                              APNG_DISPOSE_OP_BACKGROUND, 
-                              APNG_DISPOSE_OP_PREVIOUS,
-                              APNG_DISPOSE_OP_UNKNOWN)
+   TypeRaw : constant PNG.Chunk_Type := 16#6663544C#;
+
+   type Disposal_Operation is (APNG_DISPOSE_OP_NONE,
+                              APNG_DISPOSE_OP_BACKGROUND,
+                              APNG_DISPOSE_OP_PREVIOUS)
      with Size => 8;
-   for DisposalOperations use (APNG_DISPOSE_OP_NONE => 0, 
+
+   for Disposal_Operation use (APNG_DISPOSE_OP_NONE => 0,
                               APNG_DISPOSE_OP_BACKGROUND => 1,
-                              APNG_DISPOSE_OP_PREVIOUS => 2,
-                              APNG_DISPOSE_OP_UNKNOWN => 3);
-   
-   type BlendOperations is (APNG_BLEND_OP_SOURCE, 
-                           APNG_BLEND_OP_OVER,
-                           APNG_BLEND_OP_UNKNOWN)
+                              APNG_DISPOSE_OP_PREVIOUS => 2);
+
+   type Blend_Operation is (APNG_BLEND_OP_SOURCE,
+                           APNG_BLEND_OP_OVER)
      with Size => 8;
-   for BlendOperations use (APNG_BLEND_OP_SOURCE => 0, 
-                           APNG_BLEND_OP_OVER => 1,
-                           APNG_BLEND_OP_UNKNOWN => 2);
-   
+
+   for Blend_Operation use (APNG_BLEND_OP_SOURCE => 0,
+                           APNG_BLEND_OP_OVER => 1);
+
    INVALID_OPERATION_ERROR : exception;
-   
-   type Chunk_Data_Info is new PNG.Chunk_Data_Info with record
+
+   type Data_Definition is new PNG.Chunk_Data_Definition with record
       FramePosition     : PNG.Unsigned_31;
       FrameWidth        : PNG.Unsigned_31_Positive;
       FrameHeight       : PNG.Unsigned_31_Positive;
@@ -32,10 +32,14 @@ package fcTL is
       FrameOffsetY      : PNG.Unsigned_31;
       DelayNumerator    : Unsigned_16;
       DelayDenominator  : Unsigned_16;
-      DisposalOperation : DisposalOperations;
-      BlendOperation    : BlendOperations;
+      DisposalOperation : Disposal_Operation;
+      BlendOperation    : Blend_Operation;
    end record;
-   
-   overriding procedure Decode (Self : in out Chunk_Data_Info; S : Stream_Access; C : PNG.Chunk; V : PNG.Chunk_Vectors.Vector; F : Ada.Streams.Stream_IO.File_Type);
+
+   overriding procedure Decode (Self : in out Data_Definition;
+                                S : Stream_Access;
+                                C : PNG.Chunk;
+                                V : PNG.Chunk_Vectors.Vector;
+                                F : File_Type);
 
 end fcTL;

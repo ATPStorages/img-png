@@ -19,7 +19,7 @@ package PLTE is
    type Data_Definition
      (DataLength    : Palette_Data_Length;
       PaletteLength : Palette_Length)
-   is new PNG.Base_Chunk_Data_Definition with record
+   is new PNG.Chunk_Data_Definition with record
       Palette : Palette_Data (1 .. PaletteLength);
    end record;
 

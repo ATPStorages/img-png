@@ -52,7 +52,7 @@ package body PNG is
    procedure Create_Type_Info (Info : out Chunk_Type_Info;
                                Raw : Chunk_Type)
    is
-      RawH : Unsigned_128 := Unsigned_128 (Raw);
+      RawH : constant Unsigned_128 := Unsigned_128 (Raw);
    begin
       Info.Raw           := Raw;
       Info.Ancillary     := CheckBit5 (Unsigned_8 (Shr (RawH, 24) rem 2 ** 8));
@@ -64,7 +64,7 @@ package body PNG is
    --== File Operations ==--
 
    function Decode_Null_String (S : Stream_Access;
-                                Offset : out Natural)
+                                Offset : in out Natural)
                                 return Unbounded_String
    is
       New_String     : Unbounded_String;
@@ -84,8 +84,7 @@ package body PNG is
       return New_String;
    end Decode_Null_String;
 
-   function Decode_String_Chunk_End (S              : Stream_Access;
-                                     F              : File_Type;
+   function Decode_String_Chunk_End (S : Stream_Access;
                                      Length, Offset : Natural)
                                      return String
    is
@@ -95,7 +94,7 @@ package body PNG is
       return New_String;
    end Decode_String_Chunk_End;
 
-   procedure Decode (Self : in out Base_Chunk_Data_Definition;
+   procedure Decode (Self : in out Chunk_Data_Definition;
                      S : Stream_Access;
                      C : Chunk;
                      V : Chunk_Vectors.Vector;
@@ -138,7 +137,7 @@ package body PNG is
          Unsigned_31_ByteFlipper.FlipBytesBE (Chnk_Length);
 
          declare
-            Computed_CRC32          : Unsigned_32;
+            --  Computed_CRC32          : Unsigned_32;
             Constructed_Chunk       : Chunk (Chnk_Length);
          begin
             Chunk_Type'Read
@@ -151,47 +150,47 @@ package body PNG is
             if
               IHDR_Present = False and then
               Constructed_Chunks.Length > 0 and then
-              Chunk_Count (Constructed_Chunks, IHDR.TypeTag.Raw) = 0
+              Chunk_Count (Constructed_Chunks, IHDR.TypeRaw) = 0
             then
                raise BAD_STRUCTURE_ERROR
                  with "The IHDR chunk must come first in a PNG datastream";
             end if;
 
             case Constructed_Chunk.TypeInfo.Raw is
-               when 16#49484452# =>
+               when IHDR.TypeRaw =>
                   Constructed_Chunk.Data.Info := new IHDR.Data_Definition;
                   IHDR_Present := True;
-               when 16#504C5445# =>
+               when PLTE.TypeRaw =>
                   Constructed_Chunk.Data.Info := new PLTE.Data_Definition
                     (Chnk_Length, Chnk_Length / 3);
-               when 16#49444154# =>
+               when IDAT.TypeRaw =>
                   Constructed_Chunk.Data.Info := new IDAT.Data_Definition
                     (Chnk_Length);
-               when 16#49454E44# =>
+               when 16#49454E44# => --  IEND
                   Stream_Ended := True;
                   goto NoDecode;
 
-               when 16#74494D45# =>
+               when tIME.TypeRaw =>
                   Constructed_Chunk.Data.Info := new tIME.Data_Definition;
-               when 16#69434350# =>
+               when iCCP.TypeRaw =>
                   Constructed_Chunk.Data.Info := new iCCP.Data_Definition;
 
-               when 16#624B4744# =>
+               when bKGD.TypeRaw =>
                   Constructed_Chunk.Data.Info := new bKGD.Data_Definition;
-               when 16#70485973# =>
+               when pHYs.TypeRaw =>
                   Constructed_Chunk.Data.Info := new pHYs.Data_Definition;
-               when 16#69545874# =>
+               when iTXt.TypeRaw =>
                   Constructed_Chunk.Data.Info := new iTXt.Data_Definition;
-               when 16#74455874# =>
+               when tEXt.TypeRaw =>
                   Constructed_Chunk.Data.Info := new tEXt.Data_Definition;
-               when 16#65584966# =>
+               when eXIf.TypeRaw =>
                   Constructed_Chunk.Data.Info := new eXIf.Data_Definition;
 
-               when 16#6163544C# => --  APNG related chunks
+               when acTL.TypeRaw => --  APNG related chunks
                   Constructed_Chunk.Data.Info := new acTL.Data_Definition;
-               when 16#6663544C# =>
+               when fcTL.TypeRaw =>
                   Constructed_Chunk.Data.Info := new fcTL.Data_Definition;
-               when 16#66644154# =>
+               when fdAT.TypeRaw =>
                   Constructed_Chunk.Data.Info := new fdAT.Data_Definition
                     (Chnk_Length - (Unsigned_31'Size / 8));
 
@@ -200,7 +199,7 @@ package body PNG is
                      raise UNRECOGNIZED_CRITICAL_CHUNK_ERROR;
                   end if;
 
-                  Constructed_Chunk.Data.Info := new Chunk_Data_Info;
+                  Constructed_Chunk.Data.Info := new Chunk_Data_Definition;
             end case;
 
             Decode (Constructed_Chunk.Data.Info.all,

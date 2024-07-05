@@ -5,7 +5,7 @@ package acTL is
 
    TypeRaw : constant PNG.Chunk_Type := 16#6163544C#;
 
-   type Data_Definition is new PNG.Base_Chunk_Data_Definition with record
+   type Data_Definition is new PNG.Chunk_Data_Definition with record
       FrameCount  : PNG.Unsigned_31;
       RepeatCount : PNG.Unsigned_31;
    end record;

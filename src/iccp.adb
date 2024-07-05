@@ -10,7 +10,7 @@ package body iCCP is
                                 V : PNG.Chunk_Vectors.Vector;
                                 F : File_Type)
    is
-      Offset : Natural;
+      Offset : Natural := 0;
    begin
       if PNG.Chunk_Count (V, PLTE.TypeRaw) > 0 then
          raise PNG.BAD_STRUCTURE_ERROR
@@ -28,7 +28,7 @@ package body iCCP is
 
       Self.ProfileName := PNG.Decode_Null_String (S, Offset);
       PNG.Compression_Method'Read (S, Self.CompressionMethod);
-      Self.Profile := To_Unbounded_String (PNG.Decode_String_Chunk_End (S, F,
+      Self.Profile := To_Unbounded_String (PNG.Decode_String_Chunk_End (S,
                                            Natural (C.Length),
                                            Offset));
    end Decode;

@@ -7,7 +7,7 @@ package body tIME is
                                 F : File_Type)
    is
    begin
-      if PNG.Chunk_Count (V, TypeTag.Raw) > 0 then
+      if PNG.Chunk_Count (V, TypeRaw) > 0 then
          raise PNG.DUPLICATE_CHUNK_ERROR with
            "A valid PNG stream must contain only 1 tIME chunk";
       end if;

@@ -6,10 +6,10 @@ package body tEXt is
                                 V : PNG.Chunk_Vectors.Vector;
                                 F : File_Type)
    is
-      Offset : Natural;
+      Offset : Natural := 0;
    begin
       Self.Keyword := PNG.Decode_Null_String (S, Offset);
-      Self.Text    := To_Unbounded_String (PNG.Decode_String_Chunk_End (S, F,
+      Self.Text    := To_Unbounded_String (PNG.Decode_String_Chunk_End (S,
                                            Natural (C.Length),
                                            Offset));
    end Decode;

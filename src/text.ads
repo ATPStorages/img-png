@@ -6,7 +6,7 @@ package tEXt is
 
    TypeRaw : constant PNG.Chunk_Type := 16#74455874#;
 
-   type Data_Definition is new PNG.Base_Chunk_Data_Definition with record
+   type Data_Definition is new PNG.Chunk_Data_Definition with record
       Keyword : Unbounded_String;
       Text    : Unbounded_String;
    end record;

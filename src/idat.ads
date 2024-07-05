@@ -6,7 +6,7 @@ package IDAT is
    TypeRaw : constant PNG.Chunk_Type := 16#49444154#;
 
    type Data_Definition (DataLength : PNG.Unsigned_31) is
-     new PNG.Base_Chunk_Data_Definition with record
+     new PNG.Chunk_Data_Definition with record
       FrameData : PNG.Chunk_Data_Array (1 .. DataLength);
    end record;
 

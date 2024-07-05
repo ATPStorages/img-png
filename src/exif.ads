@@ -1,4 +1,3 @@
-with Ada.Containers.Vectors;
 with Ada.Containers.Indefinite_Vectors;
 with Ada.Streams.Stream_IO; use Ada.Streams.Stream_IO;
 with Interfaces; use Interfaces;
@@ -6,11 +5,13 @@ with PNG;
 
 package eXIf is
    
-   type TagDataTypes is (UNSIGNED_BYTE, 
-                         ASCII, 
-                         UNSIGNED_SHORT, 
-                         UNSIGNED_LONG, 
-                         RATIONAL, 
+   TypeRaw : constant PNG.Chunk_Type := 16#65584966#;
+
+   type Tag_Data_Type is (UNSIGNED_BYTE,
+                         ASCII,
+                         UNSIGNED_SHORT,
+                         UNSIGNED_LONG,
+                         RATIONAL,
                          SIGNED_BYTE,
                          UNDEFINED,
                          SIGNED_SHORT,
@@ -19,8 +20,8 @@ package eXIf is
                          FLOAT,
                          DOUBLE)
      with Size => 16;
-   
-   for TagDataTypes use (UNSIGNED_BYTE => 1,
+
+   for Tag_Data_Type use (UNSIGNED_BYTE => 1,
                          ASCII => 2,
                          UNSIGNED_SHORT => 3,
                          UNSIGNED_LONG => 4,
@@ -33,28 +34,32 @@ package eXIf is
                          FLOAT => 11,
                          DOUBLE => 12);
 
-   type Tag is tagged record 
+   type Tag is tagged record
       ID             : Unsigned_16;
-      DataType       : TagDataTypes;
+      DataType       : Tag_Data_Type;
       ValueCount     : Unsigned_32;
       ValueOrPointer : Unsigned_32;
    end record;
-   
+
    type Tag_Array is array (Unsigned_16 range <>) of Tag;
-   
-   type ImageFileDirectory (TagCount : Unsigned_16) is record
+
+   type Image_File_Directory (TagCount : Unsigned_16) is record
       Tags : Tag_Array (1 .. TagCount);
    end record;
-   
-   package ImageFileDirectory_Vectors is new
+
+   package Image_File_Directory_Vectors is new
      Ada.Containers.Indefinite_Vectors
        (Index_Type => Natural,
-        Element_Type => ImageFileDirectory);
-   
-   type Chunk_Data_Info is new PNG.Chunk_Data_Info with record
-      ImageFileDirectories : ImageFileDirectory_Vectors.Vector;
+        Element_Type => Image_File_Directory);
+
+   type Data_Definition is new PNG.Chunk_Data_Definition with record
+      ImageFileDirectories : Image_File_Directory_Vectors.Vector;
    end record;
-   
-   overriding procedure Decode (Self : in out Chunk_Data_Info; S : Stream_Access; C : PNG.Chunk; V : PNG.Chunk_Vectors.Vector; F : Ada.Streams.Stream_IO.File_Type);
+
+   overriding procedure Decode (Self : in out Data_Definition;
+                                S : Stream_Access;
+                                C : PNG.Chunk;
+                                V : PNG.Chunk_Vectors.Vector;
+                                F : File_Type);
 
 end eXIf;

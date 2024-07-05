@@ -4,9 +4,9 @@ with PNG;
 
 package tIME is
 
-   TypeTag : PNG.Chunk_Type_Info := PNG.Create_Type_Info (16#74494D45#);
+   TypeRaw : constant PNG.Chunk_Type := 16#74494D45#;
 
-   type Data_Definition is new PNG.Base_Chunk_Data_Definition with record
+   type Data_Definition is new PNG.Chunk_Data_Definition with record
       Year   : Unsigned_16;
       Month  : Unsigned_8 range 1 .. 12;
       Day    : Unsigned_8 range 1 .. 31;
