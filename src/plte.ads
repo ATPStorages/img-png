@@ -4,6 +4,8 @@ with PNG; use PNG;
 
 package PLTE is
 
+   TypeRaw : constant PNG.Chunk_Type := 16#504C5445#;
+
    subtype Palette_Length is Unsigned_31 range 1 .. 256;
    type Palette_Color_Data is array (1 .. 3) of Unsigned_8;
    type Palette_Data is
@@ -13,14 +15,18 @@ package PLTE is
      is Unsigned_31
        range Palette_Length'First * 3 .. Palette_Length'Last * 3
      with Dynamic_Predicate => Palette_Data_Length mod 3 = 0;
-   
-   type Chunk_Data_Info
-     (DataLength    : Palette_Data_Length; 
+
+   type Data_Definition
+     (DataLength    : Palette_Data_Length;
       PaletteLength : Palette_Length)
-   is new PNG.Chunk_Data_Info with record
+   is new PNG.Base_Chunk_Data_Definition with record
       Palette : Palette_Data (1 .. PaletteLength);
    end record;
-   
-   overriding procedure Decode (Self : in out Chunk_Data_Info; S : Stream_Access; C : PNG.Chunk; V : PNG.Chunk_Vectors.Vector; F : Ada.Streams.Stream_IO.File_Type);
+
+   overriding procedure Decode (Self : in out Data_Definition;
+                                S : Stream_Access;
+                                C : PNG.Chunk;
+                                V : PNG.Chunk_Vectors.Vector;
+                                F : File_Type);
 
 end PLTE;
