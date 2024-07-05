@@ -1,6 +1,7 @@
 pragma Ada_2022;
 
 with Ada.Characters.Latin_1;
+with Ada.Text_IO;
 with IHDR;
 with PLTE;
 with IDAT;
@@ -113,9 +114,8 @@ package body PNG is
       IHDR_Present : Boolean := False;
       Chnk_Length  : Unsigned_31;
 
-      Constructed_Chunks   : Chunk_Vectors.Vector;
-      Constructed_PNG_File : constant File :=
-        (Chunks => Constructed_Chunks);
+      New_File : aliased File;
+      Chunks   : Chunk_Vectors.Vector renames New_File.Chunks;
    begin
       Unsigned_64'Read (S, Stream_Signature);
       Unsigned_64_ByteFlipper.FlipBytesBE (Stream_Signature);
@@ -149,8 +149,8 @@ package body PNG is
 
             if
               IHDR_Present = False and then
-              Constructed_Chunks.Length > 0 and then
-              Chunk_Count (Constructed_Chunks, IHDR.TypeRaw) = 0
+              Chunks.Length > 0 and then
+              Chunk_Count (Chunks, IHDR.TypeRaw) = 0
             then
                raise BAD_STRUCTURE_ERROR
                  with "The IHDR chunk must come first in a PNG datastream";
@@ -196,7 +196,8 @@ package body PNG is
 
                when others =>
                   if not Constructed_Chunk.TypeInfo.Ancillary then
-                     raise UNRECOGNIZED_CRITICAL_CHUNK_ERROR;
+                     raise UNRECOGNIZED_CRITICAL_CHUNK_ERROR
+                     with "Last Read:" & Chunks.Last_Element.TypeInfo.Raw'Image & " File Index @" & Index (F)'Image;
                   end if;
 
                   Constructed_Chunk.Data.Info := new Chunk_Data_Definition;
@@ -205,18 +206,18 @@ package body PNG is
             Decode (Constructed_Chunk.Data.Info.all,
                     S,
                     Constructed_Chunk,
-                    Constructed_Chunks,
+                    Chunks,
                     F);
             <<NoDecode>>
 
             Unsigned_32'Read (S, Constructed_Chunk.CRC32);
             Unsigned_32_ByteFlipper.FlipBytesBE (Constructed_Chunk.CRC32);
 
-            Constructed_Chunks.Append (Constructed_Chunk);
+            Chunks.Append (Constructed_Chunk);
          end;
       end loop;
 
-      return Constructed_PNG_File;
+      return New_File;
    end Read;
 
    procedure Write (F : File; S : Stream_Access)
