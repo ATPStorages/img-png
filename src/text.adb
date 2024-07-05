@@ -9,9 +9,8 @@ package body tEXt is
       Offset : Natural := 0;
    begin
       Self.Keyword := PNG.Decode_Null_String (S, Offset);
-      Self.Text    := To_Unbounded_String (PNG.Decode_String_Chunk_End (S,
-                                           Natural (C.Length),
-                                           Offset));
+      Self.Text    := To_Unbounded_String (PNG.Decode_String_Chunk_End
+                                           (S, F, C));
    end Decode;
 
 end tEXt;

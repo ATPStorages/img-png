@@ -13,9 +13,7 @@ package body iTXt is
       PNG.Compression_Method'Read (S, Self.CompressionMethod);
       Self.LanguageTag := PNG.Decode_Null_String (S, Offset);
       Self.TranslatedKeyword := PNG.Decode_Null_String (S, Offset);
-      Self.Text := To_Unbounded_String (PNG.Decode_String_Chunk_End (S,
-                                        Natural (C.Length),
-                                        Offset));
+      Self.Text := To_Unbounded_String (PNG.Decode_String_Chunk_End (S, F, C));
    end Decode;
 
 end iTXt;

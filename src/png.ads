@@ -47,13 +47,11 @@ package PNG is
    end record;
 
    type Chunk (Length : Unsigned_31) is record
-      TypeInfo : Chunk_Type_Info;
-      Data     : Chunk_Data;
-      CRC32    : Unsigned_32;
+      TypeInfo  : Chunk_Type_Info;
+      Data      : Chunk_Data;
+      CRC32     : Unsigned_32;
+      FileIndex : Positive_Count;
    end record;
-
-   function Chunk_Equal_Element (A, B : Chunk)
-                                 return Boolean;
 
    package Chunk_Vectors is new
      Ada.Containers.Indefinite_Vectors
@@ -109,7 +107,8 @@ package PNG is
                                 return Unbounded_String;
 
    function Decode_String_Chunk_End (S : Stream_Access;
-                                     Length, Offset : Natural)
+                                     F : File_Type;
+                                     C : Chunk)
                                      return String;
 
    --== PNG File Defintion ==--

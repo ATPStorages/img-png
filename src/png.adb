@@ -1,7 +1,6 @@
 pragma Ada_2022;
 
 with Ada.Characters.Latin_1;
-with Ada.Text_IO;
 with IHDR;
 with PLTE;
 with IDAT;
@@ -17,12 +16,6 @@ with fcTL;
 with fdAT;
 
 package body PNG is
-
-   function Chunk_Equal_Element (A, B : Chunk) return Boolean
-   is
-   begin
-      return A.CRC32 = B.CRC32;
-   end Chunk_Equal_Element;
 
    function Chunk_Count (V : Chunk_Vectors.Vector;
                          ChunkType : Chunk_Type) return Natural
@@ -86,10 +79,11 @@ package body PNG is
    end Decode_Null_String;
 
    function Decode_String_Chunk_End (S : Stream_Access;
-                                     Length, Offset : Natural)
+                                     F : File_Type;
+                                     C : Chunk)
                                      return String
    is
-      New_String : String (1 .. Length - Offset);
+      New_String : String (1 .. Natural (C.Length) - Natural (Index (F) - C.FileIndex));
    begin
       String'Read (S, New_String);
       return New_String;
@@ -113,6 +107,7 @@ package body PNG is
 
       IHDR_Present : Boolean := False;
       Chnk_Length  : Unsigned_31;
+      Chnk_Index   : Positive_Count;
 
       New_File : aliased File;
       Chunks   : Chunk_Vectors.Vector renames New_File.Chunks;
@@ -146,6 +141,8 @@ package body PNG is
               (Constructed_Chunk.TypeInfo.Raw);
 
             Hydrate_Type_Info (Constructed_Chunk.TypeInfo);
+
+            Constructed_Chunk.FileIndex := Index (F);
 
             if
               IHDR_Present = False and then

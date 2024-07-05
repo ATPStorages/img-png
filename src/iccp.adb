@@ -28,9 +28,8 @@ package body iCCP is
 
       Self.ProfileName := PNG.Decode_Null_String (S, Offset);
       PNG.Compression_Method'Read (S, Self.CompressionMethod);
-      Self.Profile := To_Unbounded_String (PNG.Decode_String_Chunk_End (S,
-                                           Natural (C.Length),
-                                           Offset));
+      Self.Profile := To_Unbounded_String (PNG.Decode_String_Chunk_End
+                                           (S, F, C));
    end Decode;
 
 end iCCP;
