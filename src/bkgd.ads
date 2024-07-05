@@ -3,43 +3,45 @@ with Interfaces; use Interfaces;
 with PNG;
 
 package bKGD is
-   
-   type Color_Data_Info_Access is access PNG.Chunk_Data_Info'Class;
-   
-   type Chunk_Data_Info is new PNG.Chunk_Data_Info with record
-      Color_Data_Info : Color_Data_Info_Access;
+
+   TypeRaw : constant PNG.Chunk_Type := 16#624B4744#;
+
+   type Color_Definition_Access is access PNG.Chunk_Data_Definition'Class;
+
+   type Data_Definition is new PNG.Chunk_Data_Definition with record
+      Color_Definition : Color_Definition_Access;
    end record;
-   
+
    procedure Read
      (Stream : not null access Ada.Streams.Root_Stream_Type'Class;
-      Item   : out Chunk_Data_Info);
-   
-   for Chunk_Data_Info'Read use Read;
+      Item   : out Data_Definition);
 
-   overriding procedure Decode (Self : in out Chunk_Data_Info;
-                                S : Stream_Access; 
-                                C : PNG.Chunk; 
-                                V : PNG.Chunk_Vectors.Vector; 
+   for Data_Definition'Read use Read;
+
+   overriding procedure Decode (Self : in out Data_Definition;
+                                S : Stream_Access;
+                                C : PNG.Chunk;
+                                V : PNG.Chunk_Vectors.Vector;
                                 F : File_Type);
-   
-   type Grayscale_Chunk_Data_Info is new Chunk_Data_Info with record
+
+   type Grayscale_Definition is new Data_Definition with record
       GrayLevel : Unsigned_16;
    end record;
-   
-   type Grayscale_Chunk_Data_Info_Access is access Grayscale_Chunk_Data_Info;
-   
-   type Truecolor_Chunk_Data_Info is new Chunk_Data_Info with record
+
+   type Grayscale_Definition_Access is access Grayscale_Definition;
+
+   type Truecolor_Definition is new Data_Definition with record
       R : Unsigned_16;
       G : Unsigned_16;
       B : Unsigned_16;
    end record;
-   
-   type Truecolor_Chunk_Data_Info_Access is access Truecolor_Chunk_Data_Info;
-   
-   type Palette_Chunk_Data_Info is new Chunk_Data_Info with record
+
+   type Truecolor_Definition_Access is access Truecolor_Definition;
+
+   type Palette_Definition is new Data_Definition with record
       Index : Unsigned_8;
    end record;
-   
-   type Palette_Chunk_Data_Info_Access is access Palette_Chunk_Data_Info;
+
+   type Palette_Definition_Access is access Palette_Definition;
 
 end bKGD;
