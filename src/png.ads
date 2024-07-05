@@ -21,8 +21,10 @@ package PNG is
       SafeToCopy    : Boolean;
    end record;
 
-   function Create_Type_Info (Raw : Chunk_Type)
-                              return Chunk_Type_Info;
+   procedure Create_Type_Info (Info : out Chunk_Type_Info;
+                               Raw : Chunk_Type);
+
+   procedure Hydrate_Type_Info (Info : in out Chunk_Type_Info);
 
    type Unsigned_31 is mod 2 ** 31
      with Size => 32;
@@ -61,8 +63,7 @@ package PNG is
                      S : Stream_Access;
                      C : PNG.Chunk;
                      V : Chunk_Vectors.Vector;
-                     F : File_Type)
-   is abstract;
+                     F : File_Type);
 
    --== File Reading ==--
 
@@ -98,8 +99,14 @@ package PNG is
    package Unsigned_64_ByteFlipper is new
      ByteFlip (Modular_Type => Unsigned_64);
 
-   function Decode_Null_String (S : Stream_Access)
+   function Decode_Null_String (S : Stream_Access;
+                                Offset : out Natural)
                                 return Unbounded_String;
+
+   function Decode_String_Chunk_End (S              : Stream_Access;
+                                     F              : File_Type;
+                                     Length, Offset : Natural)
+                                     return String;
 
    --== PNG File Defintion ==--
 
@@ -112,4 +119,11 @@ package PNG is
    function  Read  (F : File_Type; S : Stream_Access)
                     return File;
    procedure Write (F : File;  S : Stream_Access);
+private
+   function Shr (V : Unsigned_128; Amount : Natural)
+                 return Unsigned_128
+                 renames Shift_Right;
+
+   function CheckBit5 (N : Unsigned_8)
+                       return Boolean;
 end PNG;

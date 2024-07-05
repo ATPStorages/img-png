@@ -1,5 +1,6 @@
+pragma Ada_2022;
+
 with Ada.Characters.Latin_1;
-with Ada.Text_IO;
 with IHDR;
 with PLTE;
 with IDAT;
@@ -36,25 +37,42 @@ package body PNG is
       return Count;
    end Chunk_Count;
 
-   function Create_Type_Info (Raw : Chunk_Type) return Chunk_Type_Info
+   function CheckBit5 (N : Unsigned_8) return Boolean
    is
-      NewTypeInfo : Chunk_Type_Info;
    begin
-      NewTypeInfo.Raw           := Raw;
-      NewTypeInfo.Ancillary     := CheckBit5 (Unsigned_8 (Shift_Right (Constructed_Chunk.TypeInfo.Raw, 24) rem 2 ** 8));
-      NewTypeInfo.Specification := CheckBit5 (Unsigned_8 (Shift_Right (Constructed_Chunk.TypeInfo.Raw, 16) rem 2 ** 8));
-      NewTypeInfo.Reserved      := CheckBit5 (Unsigned_8 (Shift_Right (Constructed_Chunk.TypeInfo.Raw,  8) rem 2 ** 8));
-      NewTypeInfo.SafeToCopy    := CheckBit5 (Unsigned_8              (Constructed_Chunk.TypeInfo.Raw      rem 2 ** 8));
+      return (N and (2 ** 5)) > 0;
+   end CheckBit5;
+
+   procedure Hydrate_Type_Info (Info : in out Chunk_Type_Info)
+   is
+   begin
+      Create_Type_Info (Info, Info.Raw);
+   end Hydrate_Type_Info;
+
+   procedure Create_Type_Info (Info : out Chunk_Type_Info;
+                               Raw : Chunk_Type)
+   is
+      RawH : Unsigned_128 := Unsigned_128 (Raw);
+   begin
+      Info.Raw           := Raw;
+      Info.Ancillary     := CheckBit5 (Unsigned_8 (Shr (RawH, 24) rem 2 ** 8));
+      Info.Specification := CheckBit5 (Unsigned_8 (Shr (RawH, 16) rem 2 ** 8));
+      Info.Reserved      := CheckBit5 (Unsigned_8 (Shr (RawH,  8) rem 2 ** 8));
+      Info.SafeToCopy    := CheckBit5 (Unsigned_8      (Raw      rem 2 ** 8));
    end Create_Type_Info;
 
    --== File Operations ==--
 
-   function Decode_Null_String (S : Stream_Access) return Unbounded_String is
+   function Decode_Null_String (S : Stream_Access;
+                                Offset : out Natural)
+                                return Unbounded_String
+   is
       New_String     : Unbounded_String;
       Read_Character : Character;
    begin
       while True loop
          Character'Read (S, Read_Character);
+         Offset := @ + 1;
 
          if Read_Character = Ada.Characters.Latin_1.NUL then
             exit;
@@ -66,13 +84,18 @@ package body PNG is
       return New_String;
    end Decode_Null_String;
 
-   function CheckBit5 (N : Unsigned_8) return Boolean
+   function Decode_String_Chunk_End (S              : Stream_Access;
+                                     F              : File_Type;
+                                     Length, Offset : Natural)
+                                     return String
    is
+      New_String : String (1 .. Length - Offset);
    begin
-      return (N and (2 ** 5)) > 0;
-   end CheckBit5;
+      String'Read (S, New_String);
+      return New_String;
+   end Decode_String_Chunk_End;
 
-   procedure Decode (Self : in out Chunk_Data_Info;
+   procedure Decode (Self : in out Base_Chunk_Data_Definition;
                      S : Stream_Access;
                      C : Chunk;
                      V : Chunk_Vectors.Vector;
@@ -80,9 +103,6 @@ package body PNG is
    is
       discard : Chunk_Data_Array (1 .. C.Length);
    begin
-      Ada.Text_IO.Put_Line ("Decode, unknown");
-      Ada.Text_IO.Put_Line ("      - Type:" & C.TypeInfo.Raw'Image);
-      Ada.Text_IO.Put_Line ("      - Size:" & C.Length'Image);
       Chunk_Data_Array'Read (S, discard);
    end Decode;
 
@@ -126,13 +146,12 @@ package body PNG is
             Unsigned_32_ByteFlipper.FlipBytesBE
               (Constructed_Chunk.TypeInfo.Raw);
 
-            Constructed_Chunk.TypeInfo :=
-              Create_Type_Info (Constructed_Chunk.TypeInfo.Raw);
+            Hydrate_Type_Info (Constructed_Chunk.TypeInfo);
 
             if
-              IHDR_Present = False and
-              Constructed_Chunks.Length > 0 and
-              Chunk_Count (V, IHDR.TypeTag.Raw) = 0
+              IHDR_Present = False and then
+              Constructed_Chunks.Length > 0 and then
+              Chunk_Count (Constructed_Chunks, IHDR.TypeTag.Raw) = 0
             then
                raise BAD_STRUCTURE_ERROR
                  with "The IHDR chunk must come first in a PNG datastream";
@@ -140,40 +159,40 @@ package body PNG is
 
             case Constructed_Chunk.TypeInfo.Raw is
                when 16#49484452# =>
-                  Constructed_Chunk.Data.Info := new IHDR.Chunk_Data_Info;
+                  Constructed_Chunk.Data.Info := new IHDR.Data_Definition;
                   IHDR_Present := True;
                when 16#504C5445# =>
-                  Constructed_Chunk.Data.Info := new PLTE.Chunk_Data_Info
+                  Constructed_Chunk.Data.Info := new PLTE.Data_Definition
                     (Chnk_Length, Chnk_Length / 3);
                when 16#49444154# =>
-                  Constructed_Chunk.Data.Info := new IDAT.Chunk_Data_Info
+                  Constructed_Chunk.Data.Info := new IDAT.Data_Definition
                     (Chnk_Length);
                when 16#49454E44# =>
                   Stream_Ended := True;
                   goto NoDecode;
 
                when 16#74494D45# =>
-                  Constructed_Chunk.Data.Info := new tIME.Chunk_Data_Info;
+                  Constructed_Chunk.Data.Info := new tIME.Data_Definition;
                when 16#69434350# =>
-                  Constructed_Chunk.Data.Info := new iCCP.Chunk_Data_Info;
+                  Constructed_Chunk.Data.Info := new iCCP.Data_Definition;
 
                when 16#624B4744# =>
-                  Constructed_Chunk.Data.Info := new bKGD.Chunk_Data_Info;
+                  Constructed_Chunk.Data.Info := new bKGD.Data_Definition;
                when 16#70485973# =>
-                  Constructed_Chunk.Data.Info := new pHYs.Chunk_Data_Info;
+                  Constructed_Chunk.Data.Info := new pHYs.Data_Definition;
                when 16#69545874# =>
-                  Constructed_Chunk.Data.Info := new iTXt.Chunk_Data_Info;
+                  Constructed_Chunk.Data.Info := new iTXt.Data_Definition;
                when 16#74455874# =>
-                  Constructed_Chunk.Data.Info := new tEXt.Chunk_Data_Info;
+                  Constructed_Chunk.Data.Info := new tEXt.Data_Definition;
                when 16#65584966# =>
-                  Constructed_Chunk.Data.Info := new eXIf.Chunk_Data_Info;
+                  Constructed_Chunk.Data.Info := new eXIf.Data_Definition;
 
                when 16#6163544C# => --  APNG related chunks
-                  Constructed_Chunk.Data.Info := new acTL.Chunk_Data_Info;
+                  Constructed_Chunk.Data.Info := new acTL.Data_Definition;
                when 16#6663544C# =>
-                  Constructed_Chunk.Data.Info := new fcTL.Chunk_Data_Info;
+                  Constructed_Chunk.Data.Info := new fcTL.Data_Definition;
                when 16#66644154# =>
-                  Constructed_Chunk.Data.Info := new fdAT.Chunk_Data_Info
+                  Constructed_Chunk.Data.Info := new fdAT.Data_Definition
                     (Chnk_Length - (Unsigned_31'Size / 8));
 
                when others =>
