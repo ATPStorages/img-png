@@ -1,21 +1,21 @@
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with Ada.Streams.Stream_IO; use Ada.Streams.Stream_IO;
-with Interfaces; use Interfaces;
 with PNG;
 
 package iCCP is
-   
-   type CompressionMethods is (DEFLATE)
-     with Size => 8;
-   
-   for CompressionMethods use (DEFLATE => 0);
-   
-   type Chunk_Data_Info is new PNG.Chunk_Data_Info with record
+
+   TypeRaw : constant PNG.Chunk_Type := 16#69434350#;
+
+   type Data_Definition is new PNG.Chunk_Data_Definition with record
       ProfileName       : Unbounded_String;
-      CompressionMethod : CompressionMethods;
+      CompressionMethod : PNG.Compression_Method;
       Profile           : Unbounded_String;
    end record;
-   
-   overriding procedure Decode (Self : in out Chunk_Data_Info; S : Stream_Access; C : PNG.Chunk; V : PNG.Chunk_Vectors.Vector; F : File_Type);
+
+   overriding procedure Decode (Self : in out Data_Definition;
+                                S : Stream_Access;
+                                C : PNG.Chunk;
+                                V : PNG.Chunk_Vectors.Vector;
+                                F : File_Type);
 
 end iCCP;

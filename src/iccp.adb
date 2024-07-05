@@ -1,39 +1,36 @@
-with Ada.Containers; use Ada.Containers;
-with Ada.Text_IO;
-with Ada.Characters.Latin_1;
-with PNG; use PNG;
+with PLTE;
+with IDAT;
+with sRGB;
 
 package body iCCP is
 
-   overriding procedure Decode (Self : in out Chunk_Data_Info;
+   overriding procedure Decode (Self : in out Data_Definition;
                                 S : Stream_Access;
-                                C : PNG.Chunk; 
+                                C : PNG.Chunk;
                                 V : PNG.Chunk_Vectors.Vector;
                                 F : File_Type)
    is
-      Start_File_Position : Positive_Count := Index (F);
-      Last_File_Position  : Positive_Count;
+      Offset : Natural;
    begin
-      --  if C.ChunkSize /= 13 then
-      --     raise PNG.BAD_CHUNK_SIZE_ERROR with "IHDR size of (" & C.ChunkSize'Image & " ) bytes incorrect, should be 13";
-      --  elsif V.Length > 0 then
-      --     raise PNG.DUPLICATE_CHUNK_ERROR with "A valid PNG stream must contain only 1 IHDR chunk";
-      --  end if;
+      if PNG.Chunk_Count (V, PLTE.TypeRaw) > 0 then
+         raise PNG.BAD_STRUCTURE_ERROR
+         with "The iCCP chunk should appear before the PLTE chunk";
+      elsif PNG.Chunk_Count (V, IDAT.TypeRaw) > 0 then
+         raise PNG.BAD_STRUCTURE_ERROR
+         with "The iCCP chunk should appear before the first IDAT chunk";
+      elsif PNG.Chunk_Count (V, sRGB.TypeRaw) > 0 then
+         raise PNG.BAD_STRUCTURE_ERROR
+         with "The iCCP chunk should not be present with an sRGB chunk";
+      elsif PNG.Chunk_Count (V, TypeRaw) > 0 then
+         raise PNG.DUPLICATE_CHUNK_ERROR
+         with "There must be only one iCCP chunk";
+      end if;
 
-      Self.ProfileName := PNG.Decode_Null_String (S);
-      CompressionMethods'Read (S, Self.CompressionMethod);
-      Last_File_Position := Index (F);
-      
-      declare
-         Profile : String (1 .. Natural (C.Length) - Natural (Last_File_Position - Start_File_Position));
-      begin
-         String'Read (S, Profile);
-         Append (Self.Profile, Profile);
-      end;
-      
-      Ada.Text_IO.Put_Line ("      iCCP Profile            : " & To_String (Self.ProfileName));
-      Ada.Text_IO.Put_Line ("      iCCP Compression Method : " & Self.CompressionMethod'Image);
-      --  Ada.Text_IO.Put_Line ("      iCCP Data               : " & To_String (Self.Profile));
+      Self.ProfileName := PNG.Decode_Null_String (S, Offset);
+      PNG.Compression_Method'Read (S, Self.CompressionMethod);
+      Self.Profile := To_Unbounded_String (PNG.Decode_String_Chunk_End (S, F,
+                                           Natural (C.Length),
+                                           Offset));
    end Decode;
 
 end iCCP;
