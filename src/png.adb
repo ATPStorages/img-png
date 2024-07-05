@@ -83,7 +83,8 @@ package body PNG is
                                      C : Chunk)
                                      return String
    is
-      New_String : String (1 .. Natural (C.Length) - Natural (Index (F) - C.FileIndex));
+      New_String : String
+        (1 .. Natural (C.Length) - Natural (Index (F) - C.FileIndex));
    begin
       String'Read (S, New_String);
       return New_String;
@@ -194,7 +195,9 @@ package body PNG is
                when others =>
                   if not Constructed_Chunk.TypeInfo.Ancillary then
                      raise UNRECOGNIZED_CRITICAL_CHUNK_ERROR
-                     with "Last Read:" & Chunks.Last_Element.TypeInfo.Raw'Image & " File Index @" & Index (F)'Image;
+                       with "Last Read:" &
+                       Chunks.Last_Element.TypeInfo.Raw'Image &
+                       " File Index @" & Index (F)'Image;
                   end if;
 
                   Constructed_Chunk.Data.Info := new Chunk_Data_Definition;
