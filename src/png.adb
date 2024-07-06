@@ -265,6 +265,5 @@ package body PNG is
       pragma Unreferenced (F);
    begin
       Unsigned_64'Output (S, Signature);
-      null;
    end Write;
 end PNG;
