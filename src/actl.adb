@@ -1,3 +1,5 @@
+with Interfaces; use Interfaces;
+
 with PLTE;
 with IDAT;
 
@@ -9,6 +11,7 @@ package body acTL is
                                 V : PNG.Chunk_Vectors.Vector;
                                 F : File_Type)
    is
+      Unsigned_32_Buffer : Unsigned_32;
    begin
       if PNG.Chunk_Count (V, TypeRaw) > 0 then
          raise PNG.DUPLICATE_CHUNK_ERROR
@@ -21,10 +24,15 @@ package body acTL is
          with "acTL must come before PLTE/IDAT";
       end if;
 
-      Data_Definition'Read (S, Self);
+      -- See ihdr.adb
 
-      PNG.Unsigned_31_ByteFlipper.FlipBytesBE (Self.FrameCount);
-      PNG.Unsigned_31_ByteFlipper.FlipBytesBE (Self.RepeatCount);
+      Unsigned_32'Read (S, Unsigned_32_Buffer);
+      PNG.Unsigned_32_ByteFlipper.FlipBytesBE (Unsigned_32_Buffer);
+      Self.FrameCount := PNG.Unsigned_31 (Unsigned_32_Buffer);
+
+      Unsigned_32'Read (S, Unsigned_32_Buffer);
+      PNG.Unsigned_32_ByteFlipper.FlipBytesBE (Unsigned_32_Buffer);
+      Self.RepeatCount := PNG.Unsigned_31 (Unsigned_32_Buffer);
    end Decode;
 
 end acTL;

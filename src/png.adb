@@ -112,7 +112,7 @@ package body PNG is
       Stream_Ended     : Boolean := False;
 
       IHDR_Present : Boolean := False;
-      Chnk_Length  : Unsigned_31;
+      Chnk_Length  : Unsigned_32;
       Chnk_Index   : Positive_Count;
 
       New_File : aliased File;
@@ -139,12 +139,12 @@ package body PNG is
             end if;
          end if;
 
-         Unsigned_31'Read (S, Chnk_Length);
-         Unsigned_31_ByteFlipper.FlipBytesBE (Chnk_Length);
+         Unsigned_32'Read (S, Chnk_Length);
+         Unsigned_32_ByteFlipper.FlipBytesBE (Chnk_Length);
 
          declare
             Computed_CRC32          : Unsigned_32;
-            Constructed_Chunk       : Chunk (Chnk_Length);
+            Constructed_Chunk       : Chunk (Unsigned_31 (Chnk_Length));
          begin
             Chunk_Type'Read
               (S, Constructed_Chunk.TypeInfo.Raw);
@@ -170,10 +170,10 @@ package body PNG is
                   IHDR_Present := True;
                when PLTE.TypeRaw =>
                   Constructed_Chunk.Data.Info := new PLTE.Data_Definition
-                    (Chnk_Length, Chnk_Length / 3);
+                    (Unsigned_31 (Chnk_Length), Unsigned_31 (Chnk_Length / 3));
                when IDAT.TypeRaw =>
                   Constructed_Chunk.Data.Info := new IDAT.Data_Definition
-                    (Chnk_Length);
+                    (Unsigned_31 (Chnk_Length));
                when 16#49454E44# => --  IEND
                   Stream_Ended := True;
                   goto NoDecode;
@@ -200,7 +200,7 @@ package body PNG is
                   Constructed_Chunk.Data.Info := new fcTL.Data_Definition;
                when fdAT.TypeRaw =>
                   Constructed_Chunk.Data.Info := new fdAT.Data_Definition
-                    (Chnk_Length - (Unsigned_31'Size / 8));
+                    (Unsigned_31 (Chnk_Length) - (Unsigned_31'Size / 8));
 
                when others =>
                   if not Constructed_Chunk.TypeInfo.Ancillary then
@@ -248,7 +248,9 @@ package body PNG is
                Set_Index (F, Index (F) + (Constructed_Chunk.CRC32'Size / 8));
             end;
 
-            Chunks.Append (Constructed_Chunk);
+            if not Stream_Ended then
+               Chunks.Append (Constructed_Chunk);
+            end if;
          end;
       end loop;
 

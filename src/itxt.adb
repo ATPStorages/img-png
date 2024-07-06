@@ -9,6 +9,7 @@ package body iTXt is
    is
       Offset : Natural := 0;
    begin
+      Self.Keyword := PNG.Decode_Null_String (S, Offset);
       Boolean'Read (S, Self.Compressed);
       PNG.Compression_Method'Read (S, Self.CompressionMethod);
       Self.LanguageTag := PNG.Decode_Null_String (S, Offset);

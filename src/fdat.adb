@@ -1,3 +1,5 @@
+with Interfaces; use Interfaces;
+
 with IDAT;
 
 package body fdAT is
@@ -8,15 +10,20 @@ package body fdAT is
                                 V : PNG.Chunk_Vectors.Vector;
                                 F : File_Type)
    is
+      Unsigned_32_Buffer : Unsigned_32;
    begin
       if PNG.Chunk_Count (V, IDAT.TypeRaw) < 1 then
          raise PNG.BAD_STRUCTURE_ERROR
          with "All fdAT chunks must come after the inital IDAT chunk";
       end if;
 
-      Data_Definition'Read (S, Self);
+      -- See ihdr.adb
 
-      PNG.Unsigned_31_ByteFlipper.FlipBytesBE (Self.FramePosition);
+      Unsigned_32'Read (S, Unsigned_32_Buffer);
+      PNG.Unsigned_32_ByteFlipper.FlipBytesBE (Unsigned_32_Buffer);
+      Self.FramePosition := PNG.Unsigned_31 (Unsigned_32_Buffer);
+
+      PNG.Chunk_Data_Array'Read (S, Self.FrameData);
    end Decode;
 
 end fdAT;

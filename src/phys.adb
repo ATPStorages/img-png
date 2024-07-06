@@ -1,3 +1,5 @@
+with Interfaces; use Interfaces;
+
 with IDAT;
 
 package body pHYs is
@@ -8,6 +10,7 @@ package body pHYs is
                                 V : PNG.Chunk_Vectors.Vector;
                                 F : File_Type)
    is
+      Unsigned_32_Buffer : Unsigned_32;
    begin
       if PNG.Chunk_Count (V, TypeRaw) > 0 then
          raise PNG.DUPLICATE_CHUNK_ERROR
@@ -17,10 +20,17 @@ package body pHYs is
          with "pHYs must come before the first IDAT chunk";
       end if;
 
-      Data_Definition'Read (S, Self);
+      -- See ihdr.adb
 
-      PNG.Unsigned_31_ByteFlipper.FlipBytesBE (Self.PixelsPerHorizontalUnit);
-      PNG.Unsigned_31_ByteFlipper.FlipBytesBE (Self.PixelsPerVerticalUnit);
+      Unsigned_32'Read (S, Unsigned_32_Buffer);
+      PNG.Unsigned_32_ByteFlipper.FlipBytesBE (Unsigned_32_Buffer);
+      Self.PixelsPerHorizontalUnit := PNG.Unsigned_31 (Unsigned_32_Buffer);
+
+      Unsigned_32'Read (S, Unsigned_32_Buffer);
+      PNG.Unsigned_32_ByteFlipper.FlipBytesBE (Unsigned_32_Buffer);
+      Self.PixelsPerVerticalUnit := PNG.Unsigned_31 (Unsigned_32_Buffer);
+
+      Unit_Type'Read (S, Self.Unit);
    end Decode;
 
 end pHYs;

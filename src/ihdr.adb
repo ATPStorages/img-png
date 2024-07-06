@@ -1,4 +1,5 @@
 with Ada.Containers; use Ada.Containers;
+with Ada.Text_IO;
 with PNG; use PNG;
 
 package body IHDR is
@@ -7,18 +8,31 @@ package body IHDR is
                                 S : Stream_Access;
                                 C : PNG.Chunk;
                                 V : PNG.Chunk_Vectors.Vector;
-                                F : Ada.Streams.Stream_IO.File_Type)
+                                F : File_Type)
    is
+      Unsigned_32_Buffer : Unsigned_32;
    begin
       if V.Length > 0 then
          raise PNG.DUPLICATE_CHUNK_ERROR
          with "Only 1 IHDR chunk can be in a PNG datastream";
       end if;
 
-      Data_Definition'Read (S, Self);
+      --  Reading Data_Definition will cause invalid data to be read into
+      --  Height/Width for little endian systems (Unsigned_32s bad for 31s!)
 
-      PNG.Unsigned_31_ByteFlipper.FlipBytesBE (Self.Width);
-      PNG.Unsigned_31_ByteFlipper.FlipBytesBE (Self.Height);
+      Unsigned_32'Read (S, Unsigned_32_Buffer);
+      PNG.Unsigned_32_ByteFlipper.FlipBytesBE (Unsigned_32_Buffer);
+      Self.Width := PNG.Unsigned_31 (Unsigned_32_Buffer);
+
+      Unsigned_32'Read (S, Unsigned_32_Buffer);
+      PNG.Unsigned_32_ByteFlipper.FlipBytesBE (Unsigned_32_Buffer);
+      Self.Height := PNG.Unsigned_31 (Unsigned_32_Buffer);
+
+      Unsigned_8'Read (S, Self.BitDepth);
+      Color_Type'Read (S, Self.ColorType);
+      PNG.Compression_Method'Read (S, Self.CompressionMethod);
+      Unsigned_8'Read (S, Self.FilterMethod);
+      Unsigned_8'Read (S, Self.InterlaceMethod);
    end Decode;
 
 end IHDR;

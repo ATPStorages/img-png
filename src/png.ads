@@ -94,9 +94,6 @@ package PNG is
    package Unsigned_16_ByteFlipper is new
      ByteFlip (Modular_Type => Unsigned_16);
 
-   package Unsigned_31_ByteFlipper is new
-     ByteFlip (Modular_Type => Unsigned_31);
-
    package Unsigned_32_ByteFlipper is new
      ByteFlip (Modular_Type => Unsigned_32);
 
