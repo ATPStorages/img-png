@@ -6,6 +6,7 @@ with PLTE;
 with IDAT;
 with tIME;
 with iCCP;
+with cICP;
 with bKGD;
 with pHYs;
 with iTXt;
@@ -182,6 +183,8 @@ package body PNG is
                   Constructed_Chunk.Data.Info := new tIME.Data_Definition;
                when iCCP.TypeRaw =>
                   Constructed_Chunk.Data.Info := new iCCP.Data_Definition;
+               when cICP.TypeRaw =>
+                  Constructed_Chunk.Data.Info := new cICP.Data_Definition;
 
                when bKGD.TypeRaw =>
                   Constructed_Chunk.Data.Info := new bKGD.Data_Definition;
