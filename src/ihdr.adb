@@ -10,10 +10,7 @@ package body IHDR is
                                 F : Ada.Streams.Stream_IO.File_Type)
    is
    begin
-      if C.Length /= 13 then
-         raise PNG.BAD_CHUNK_SIZE_ERROR
-         with "IHDR size of" & C.Length'Image & " bytes incorrect, must be 13";
-      elsif V.Length > 0 then
+      if V.Length > 0 then
          raise PNG.DUPLICATE_CHUNK_ERROR
          with "Only 1 IHDR chunk can be in a PNG datastream";
       end if;

@@ -18,6 +18,8 @@ package PNG is
    for Compression_Method use (DEFLATE => 0);
 
    subtype Chunk_Type is Unsigned_32;
+   Chunk_Type_Size_Bytes : constant := Chunk_Type'Size / 8;
+
    type Chunk_Type_Info is record
       Raw        : Chunk_Type;
       Ancillary  : Boolean;
@@ -72,10 +74,6 @@ package PNG is
 
    --= Exceptions =--
 
-   --  There's a chunk with a wrong size where it is defined in the
-   --  PrivateUse.
-   BAD_CHUNK_SIZE_ERROR : exception;
-
    --  There's a problem with the first 4 bytes of the PNG stream;
    --  they don't line up with PNG.Signature.
    BAD_SIGNATURE_ERROR : exception;
@@ -89,6 +87,9 @@ package PNG is
 
    --  There's an unrecognized non-ancillary chunk which cannot be skipped over
    UNRECOGNIZED_CRITICAL_CHUNK_ERROR : exception;
+
+   --  A chunk has an incorrect CRC32.
+   CORRUPT_CHUNK_ERROR : exception;
 
    package Unsigned_16_ByteFlipper is new
      ByteFlip (Modular_Type => Unsigned_16);

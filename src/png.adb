@@ -15,6 +15,8 @@ with acTL;
 with fcTL;
 with fdAT;
 
+with CRC;
+
 package body PNG is
 
    function Chunk_Count (V : Chunk_Vectors.Vector;
@@ -101,6 +103,9 @@ package body PNG is
       Chunk_Data_Array'Read (S, discard);
    end Decode;
 
+   Local_CRC    : CRC.CRC_Array;
+   Local_CRC_OK : Boolean := False;
+
    function Read (F : File_Type; S : Stream_Access) return File
    is
       Stream_Signature : Unsigned_64;
@@ -113,6 +118,11 @@ package body PNG is
       New_File : aliased File;
       Chunks   : Chunk_Vectors.Vector renames New_File.Chunks;
    begin
+      if not Local_CRC_OK then
+         CRC.Compute_CRC_Table (Local_CRC);
+         Local_CRC_OK := True;
+      end if;
+
       Unsigned_64'Read (S, Stream_Signature);
       Unsigned_64_ByteFlipper.FlipBytesBE (Stream_Signature);
       if Stream_Signature /= Signature then
@@ -133,7 +143,7 @@ package body PNG is
          Unsigned_31_ByteFlipper.FlipBytesBE (Chnk_Length);
 
          declare
-            --  Computed_CRC32          : Unsigned_32;
+            Computed_CRC32          : Unsigned_32;
             Constructed_Chunk       : Chunk (Chnk_Length);
          begin
             Chunk_Type'Read
@@ -212,6 +222,31 @@ package body PNG is
 
             Unsigned_32'Read (S, Constructed_Chunk.CRC32);
             Unsigned_32_ByteFlipper.FlipBytesBE (Constructed_Chunk.CRC32);
+
+            declare
+               Data             : CRC.Byte_Array (1 ..
+                                                    Unsigned_32 (Chnk_Length) +
+                                                    Unsigned_32 (Chunk_Type_Size_Bytes)
+                                                 );
+               Calculated_CRC32 : Unsigned_32;
+            begin
+               Set_Index (F,
+                          Constructed_Chunk.FileIndex - Chunk_Type_Size_Bytes);
+               CRC.Byte_Array'Read (S, Data);
+               Calculated_CRC32 := CRC.Compute_CRC (Local_CRC, Data);
+
+               if
+                 Calculated_CRC32 /= Constructed_Chunk.CRC32
+               then
+                  raise CORRUPT_CHUNK_ERROR
+                    with Constructed_Chunk.TypeInfo.Raw'Image &
+                    " failed to verify, file CRC:"
+                    & Constructed_Chunk.CRC32'Image &
+                    ", calculated CRC:" & Calculated_CRC32'Image;
+               end if;
+
+               Set_Index (F, Index (F) + (Constructed_Chunk.CRC32'Size / 8));
+            end;
 
             Chunks.Append (Constructed_Chunk);
          end;

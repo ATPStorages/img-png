@@ -14,3 +14,9 @@ byteflip = "~0.1.0-dev"
 
 [[pins]]
 byteflip = { path='../byteflip' }
+
+[[depends-on]]
+crc = "~0.1.0-dev"
+
+[[pins]]
+crc = { path='../crc' }
