@@ -132,6 +132,13 @@ package body PNG is
       end if;
 
       while True loop
+         if
+           Stream_Ended and then
+           End_Of_File (F)
+         then
+            exit;
+         end if;
+
          Unsigned_32'Read (S, Chnk_Length);
          Unsigned_32_ByteFlipper.FlipBytesBE (Chnk_Length);
 
