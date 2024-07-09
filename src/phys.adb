@@ -6,18 +6,29 @@ package body pHYs is
 
    overriding procedure Decode (Self : in out Data_Definition;
                                 S : Stream_Access;
-                                C : PNG.Chunk;
+                                C : in out PNG.Chunk;
                                 V : PNG.Chunk_Vectors.Vector;
                                 F : File_Type)
    is
       Unsigned_32_Buffer : Unsigned_32;
    begin
       if PNG.Chunk_Count (V, TypeRaw) > 0 then
-         raise PNG.DUPLICATE_CHUNK_ERROR
-         with "There may only be one pHYs chunk";
-      elsif PNG.Chunk_Count (V, IDAT.TypeRaw) > 0 then
-         raise PNG.BAD_STRUCTURE_ERROR
-         with "pHYs must come before the first IDAT chunk";
+         declare
+            Duplicate_Error : PNG.Decoder_Error (PNG.DUPLICATE_CHUNK);
+         begin
+            C.Data.Errors.Append (Duplicate_Error);
+         end;
+      end if;
+
+      if PNG.Chunk_Count (V, IDAT.TypeRaw) > 0 then
+         if PNG.Chunk_Count (V, TypeRaw) > 0 then
+            declare
+               Structure_Error : PNG.Decoder_Error (PNG.BAD_ORDER);
+            begin
+               Structure_Error.Constraints.Insert (IDAT.TypeRaw, PNG.AFTER);
+               C.Data.Errors.Append (Structure_Error);
+            end;
+         end if;
       end if;
 
       -- See ihdr.adb

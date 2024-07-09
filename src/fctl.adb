@@ -6,7 +6,7 @@ package body fcTL is
 
    overriding procedure Decode (Self : in out Data_Definition;
                                 S : Stream_Access;
-                                C : PNG.Chunk;
+                                C : in out PNG.Chunk;
                                 V : PNG.Chunk_Vectors.Vector;
                                 F : File_Type)
    is
@@ -16,8 +16,12 @@ package body fcTL is
         PNG.Chunk_Count (V, IDAT.TypeRaw) = 0 and then
         PNG.Chunk_Count (V, TypeRaw) > 0
       then
-         raise PNG.BAD_STRUCTURE_ERROR
-           with "Only one fcTL chunk may appear behind the first IDAT chunk";
+         declare
+            Structure_Error : PNG.Decoder_Error (PNG.BAD_ORDER);
+         begin
+            Structure_Error.Constraints.Insert (IDAT.TypeRaw, PNG.BEFORE);
+            C.Data.Errors.Append (Structure_Error);
+         end;
       end if;
 
       -- See ihdr.adb

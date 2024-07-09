@@ -96,7 +96,7 @@ package body PNG is
 
    procedure Decode (Self : in out Chunk_Data_Definition;
                      S : Stream_Access;
-                     C : Chunk;
+                     C : in out Chunk;
                      V : Chunk_Vectors.Vector;
                      F : File_Type)
    is
@@ -132,15 +132,6 @@ package body PNG is
       end if;
 
       while True loop
-         if Stream_Ended then
-            if End_Of_File (F) then
-               exit;
-            else
-               raise BAD_STRUCTURE_ERROR
-                 with "IEND must appear at the very end of a PNG stream";
-            end if;
-         end if;
-
          Unsigned_32'Read (S, Chnk_Length);
          Unsigned_32_ByteFlipper.FlipBytesBE (Chnk_Length);
 
@@ -148,6 +139,15 @@ package body PNG is
             Computed_CRC32          : Unsigned_32;
             Constructed_Chunk       : Chunk (Unsigned_31 (Chnk_Length));
          begin
+            if Stream_Ended then
+               declare
+                  End_Error : Decoder_Error (BAD_ORDER);
+               begin
+                  End_Error.Constraints.Insert (16#49454E44#, BEFORE);
+                  Constructed_Chunk.Data.Errors.Append (End_Error);
+               end;
+            end if;
+
             Chunk_Type'Read
               (S, Constructed_Chunk.TypeInfo.Raw);
             Unsigned_32_ByteFlipper.FlipBytesBE
@@ -162,8 +162,12 @@ package body PNG is
               Chunks.Length > 0 and then
               Chunk_Count (Chunks, IHDR.TypeRaw) = 0
             then
-               raise BAD_STRUCTURE_ERROR
-                 with "The IHDR chunk must come first in a PNG datastream";
+               declare
+                  IHDR_Error : Decoder_Error (BAD_ORDER);
+               begin
+                  IHDR_Error.Constraints.Insert (IHDR.TypeRaw, BEFORE);
+                  Constructed_Chunk.Data.Errors.Append (IHDR_Error);
+               end;
             end if;
 
             case Constructed_Chunk.TypeInfo.Raw is
@@ -235,7 +239,9 @@ package body PNG is
                                              Unsigned_32 (Chnk_Length) +
                                              Unsigned_32 (Chunk_Type_Size_Bytes)
                                           );
+
                Calculated_CRC32 : Unsigned_32;
+               Checksum_Error   : Decoder_Error (CRC_MISMATCH);
             begin
                Set_Index (F,
                           Constructed_Chunk.FileIndex - Chunk_Type_Size_Bytes);
@@ -245,11 +251,8 @@ package body PNG is
                if
                  Calculated_CRC32 /= Constructed_Chunk.CRC32
                then
-                  raise CORRUPT_CHUNK_ERROR
-                    with Constructed_Chunk.TypeInfo.Raw'Image &
-                    " failed to verify, file CRC:"
-                    & Constructed_Chunk.CRC32'Image &
-                    ", calculated CRC:" & Calculated_CRC32'Image;
+                  Checksum_Error.Read := Calculated_CRC32;
+                  Constructed_Chunk.Data.Errors.Append (Checksum_Error);
                end if;
 
                Set_Index (F, Index (F) + (Constructed_Chunk.CRC32'Size / 8));

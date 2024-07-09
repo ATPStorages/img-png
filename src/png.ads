@@ -1,6 +1,7 @@
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with Ada.Containers; use Ada.Containers;
 with Ada.Containers.Indefinite_Vectors;
+with Ada.Containers.Indefinite_Ordered_Maps;
 with Ada.Streams.Stream_IO; use Ada.Streams.Stream_IO;
 with Interfaces; use Interfaces;
 with ByteFlip;
@@ -44,8 +45,40 @@ package PNG is
    type Chunk_Data_Access is
      access all Chunk_Data_Definition'Class;
 
+   type Decoder_Error_Type is (BAD_ORDER,
+                               DUPLICATE_CHUNK,
+                               CRC_MISMATCH,
+                               MUTUALLY_EXCLUSIVE);
+
+   type Chunk_Type_Order is (BEFORE,
+                             AFTER);
+
+   package Chunk_Type_Ordering_Maps is new
+     Ada.Containers.Indefinite_Ordered_Maps
+       (Key_Type        => Chunk_Type,
+        Element_Type    => Chunk_Type_Order);
+
+   type Decoder_Error (ErrorType : Decoder_Error_Type) is record
+      case ErrorType is
+         when BAD_ORDER =>
+            Constraints : Chunk_Type_Ordering_Maps.Map;
+         when CRC_MISMATCH =>
+            Read : Unsigned_32;
+         when MUTUALLY_EXCLUSIVE =>
+            To : Chunk_Type;
+         when others =>
+            null;
+      end case;
+   end record;
+
+   package Error_Vectors is new
+     Ada.Containers.Indefinite_Vectors
+       (Index_Type => Natural,
+        Element_Type => Decoder_Error);
+
    type Chunk_Data is record
-      Info : Chunk_Data_Access;
+      Info   : Chunk_Data_Access;
+      Errors : Error_Vectors.Vector;
    end record;
 
    type Chunk (Length : Unsigned_31) is record
@@ -66,7 +99,7 @@ package PNG is
 
    procedure Decode (Self : in out Chunk_Data_Definition;
                      S : Stream_Access;
-                     C : PNG.Chunk;
+                     C : in out PNG.Chunk;
                      V : Chunk_Vectors.Vector;
                      F : File_Type);
 
@@ -78,18 +111,8 @@ package PNG is
    --  they don't line up with PNG.Signature.
    BAD_SIGNATURE_ERROR : exception;
 
-   --  There's a second chunk where only one chunk of a certain type may exist.
-   DUPLICATE_CHUNK_ERROR : exception;
-
-   --  There's a problem with the structure of the PNG stream
-   --  (i.e. no IHDR at the start, no IEND at the end)
-   BAD_STRUCTURE_ERROR : exception;
-
    --  There's an unrecognized non-ancillary chunk which cannot be skipped over
    UNRECOGNIZED_CRITICAL_CHUNK_ERROR : exception;
-
-   --  A chunk has an incorrect CRC32.
-   CORRUPT_CHUNK_ERROR : exception;
 
    package Unsigned_16_ByteFlipper is new
      ByteFlip (Modular_Type => Unsigned_16);

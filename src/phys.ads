@@ -19,7 +19,7 @@ package pHYs is
 
    overriding procedure Decode (Self : in out Data_Definition;
                                 S : Stream_Access;
-                                C : PNG.Chunk;
+                                C : in out PNG.Chunk;
                                 V : PNG.Chunk_Vectors.Vector;
                                 F : File_Type);
 

@@ -7,21 +7,31 @@ package body acTL is
 
    overriding procedure Decode (Self : in out Data_Definition;
                                 S : Stream_Access;
-                                C : PNG.Chunk;
+                                C : in out PNG.Chunk;
                                 V : PNG.Chunk_Vectors.Vector;
                                 F : File_Type)
    is
       Unsigned_32_Buffer : Unsigned_32;
    begin
       if PNG.Chunk_Count (V, TypeRaw) > 0 then
-         raise PNG.DUPLICATE_CHUNK_ERROR
-         with "Only 1 acTL chunk is permitted in a PNG datastream";
-      elsif
+         declare
+            Chunk_Error : PNG.Decoder_Error (PNG.DUPLICATE_CHUNK);
+         begin
+            C.Data.Errors.Append (Chunk_Error);
+         end;
+      end if;
+
+      if
         PNG.Chunk_Count (V, PLTE.TypeRaw) > 0 or else
         PNG.Chunk_Count (V, IDAT.TypeRaw) > 0
       then
-         raise PNG.BAD_STRUCTURE_ERROR
-         with "acTL must come before PLTE/IDAT";
+         declare
+            Chunk_Error : PNG.Decoder_Error (PNG.BAD_ORDER);
+         begin
+            Chunk_Error.Constraints.Insert (PLTE.TypeRaw, PNG.AFTER);
+            Chunk_Error.Constraints.Insert (IDAT.TypeRaw, PNG.AFTER);
+            C.Data.Errors.Append (Chunk_Error);
+         end;
       end if;
 
       -- See ihdr.adb

@@ -4,7 +4,7 @@ package body IDAT is
 
    overriding procedure Decode (Self : in out Data_Definition;
                                 S : Stream_Access;
-                                C : PNG.Chunk;
+                                C : in out PNG.Chunk;
                                 V : PNG.Chunk_Vectors.Vector;
                                 F : File_Type)
    is
@@ -13,8 +13,12 @@ package body IDAT is
         V.Last_Element.TypeInfo.Raw /= TypeRaw and then
         PNG.Chunk_Count (V, TypeRaw) > 0
       then
-         raise PNG.BAD_STRUCTURE_ERROR
-           with "IDAT chunks should be consective in a valid PNG datastream";
+         declare
+            Structure_Error : PNG.Decoder_Error (PNG.BAD_ORDER);
+         begin
+            Structure_Error.Constraints.Insert (TypeRaw, PNG.BEFORE);
+            C.Data.Errors.Append (Structure_Error);
+         end;
       end if;
 
       Data_Definition'Read (S, Self);
