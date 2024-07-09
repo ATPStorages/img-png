@@ -9,6 +9,7 @@ with iCCP;
 with cICP;
 with bKGD;
 with pHYs;
+with zTXt;
 with iTXt;
 with tEXt;
 with eXIf;
@@ -16,7 +17,7 @@ with acTL;
 with fcTL;
 with fdAT;
 
-with CRC;
+with Checksum.CRC;
 
 package body PNG is
 
@@ -104,7 +105,7 @@ package body PNG is
       Chunk_Data_Array'Read (S, discard);
    end Decode;
 
-   Local_CRC    : CRC.CRC_Array;
+   Local_CRC    : Checksum.CRC.CRC_Array;
    Local_CRC_OK : Boolean := False;
 
    function Read (F : File_Type; S : Stream_Access) return File
@@ -120,7 +121,7 @@ package body PNG is
       Chunks   : Chunk_Vectors.Vector renames New_File.Chunks;
    begin
       if not Local_CRC_OK then
-         CRC.Compute_CRC_Table (Local_CRC);
+         Checksum.CRC.Compute_CRC_Table (Local_CRC);
          Local_CRC_OK := True;
       end if;
 
@@ -174,7 +175,7 @@ package body PNG is
                     (Unsigned_31 (Chnk_Length), Unsigned_31 (Chnk_Length / 3));
                when IDAT.TypeRaw =>
                   Constructed_Chunk.Data.Info := new IDAT.Data_Definition
-                    (Unsigned_31 (Chnk_Length));
+                    (Chnk_Length - 9);
                when 16#49454E44# => --  IEND
                   Stream_Ended := True;
                   goto NoDecode;
@@ -190,6 +191,9 @@ package body PNG is
                   Constructed_Chunk.Data.Info := new bKGD.Data_Definition;
                when pHYs.TypeRaw =>
                   Constructed_Chunk.Data.Info := new pHYs.Data_Definition;
+               when zTXt.TypeRaw =>
+                  Constructed_Chunk.Data.Info := new zTXt.Data_Definition
+                    (Chnk_Length - 22);
                when iTXt.TypeRaw =>
                   Constructed_Chunk.Data.Info := new iTXt.Data_Definition;
                when tEXt.TypeRaw =>
@@ -227,16 +231,16 @@ package body PNG is
             Unsigned_32_ByteFlipper.FlipBytesBE (Constructed_Chunk.CRC32);
 
             declare
-               Data             : CRC.Byte_Array (1 ..
-                                                    Unsigned_32 (Chnk_Length) +
-                                                    Unsigned_32 (Chunk_Type_Size_Bytes)
-                                                 );
+               Data : Checksum.Byte_Array (1 ..
+                                             Unsigned_32 (Chnk_Length) +
+                                             Unsigned_32 (Chunk_Type_Size_Bytes)
+                                          );
                Calculated_CRC32 : Unsigned_32;
             begin
                Set_Index (F,
                           Constructed_Chunk.FileIndex - Chunk_Type_Size_Bytes);
-               CRC.Byte_Array'Read (S, Data);
-               Calculated_CRC32 := CRC.Compute_CRC (Local_CRC, Data);
+               Checksum.Byte_Array'Read (S, Data);
+               Calculated_CRC32 := Checksum.CRC.Compute_CRC (Local_CRC, Data);
 
                if
                  Calculated_CRC32 /= Constructed_Chunk.CRC32
