@@ -107,7 +107,10 @@ package body PNG is
    Local_CRC    : Checksum.CRC.CRC_Array;
    Local_CRC_OK : Boolean := False;
 
-   function Read (F : File_Type; S : Stream_Access) return File
+   function Read (F : File_Type;
+                  S : Stream_Access;
+                  Compute_CRC : Boolean)
+                  return File
    is
       Stream_Signature : Unsigned_64;
       Stream_Ended     : Boolean := False;
@@ -230,36 +233,46 @@ package body PNG is
             Decode (Chunk.Data.Info.all, S, Chunk, Chunks, F);
             <<NoDecode>>
 
-            declare
-               To_Read        : Unsigned_32 :=
-                 Chnk_Length + Chunk_Type_Size_Bytes;
-               Checksum_Error : Decoder_Error (CRC_MISMATCH);
-            begin
-               Set_Index (F, Chunk.FileIndex - Chunk_Type_Size_Bytes);
+            if Compute_CRC then
+               declare
+                  To_Read        : Unsigned_32 :=
+                    Chnk_Length + Chunk_Type_Size_Bytes;
+                  Checksum_Error : Decoder_Error (CRC_MISMATCH);
+               begin
+                  Set_Index (F, Chunk.FileIndex - Chunk_Type_Size_Bytes);
 
-               loop
-                  declare
-                     Data : Checksum.Byte_Array
-                       (1 .. Unsigned_32'Min (To_Read, 8192));
-                  begin
-                     Checksum.Byte_Array'Read (S, Data);
-                     To_Read := @ - (Data'Size / 8);
-                     Checksum.CRC.Update_CRC (Computed_CRC32, Local_CRC, Data);
-                  end;
+                  loop
+                     declare
+                        Data : Checksum.Byte_Array
+                          (1 .. Unsigned_32'Min (To_Read, 8192));
+                     begin
+                        Checksum.Byte_Array'Read (S, Data);
+                        To_Read := @ - (Data'Size / 8);
+                        Checksum.CRC.Update_CRC (Computed_CRC32, Local_CRC, Data);
+                     end;
 
-                  exit when To_Read = 0;
-               end loop;
+                     exit when To_Read = 0;
+                  end loop;
 
-               Computed_CRC32 := @ xor Checksum.Full_32;
+                  Computed_CRC32 := @ xor Checksum.Full_32;
 
-               Unsigned_32'Read (S, Chunk.CRC32);
-               Unsigned_32_ByteFlipper.FlipBytesBE (Chunk.CRC32);
+                  Unsigned_32'Read (S, Chunk.CRC32);
+                  Unsigned_32_ByteFlipper.FlipBytesBE (Chunk.CRC32);
 
-               if Computed_CRC32 /= Chunk.CRC32 then
-                  Checksum_Error.Read := Computed_CRC32;
-                  Chunk.Data.Errors.Append (Checksum_Error);
-               end if;
-            end;
+                  if Computed_CRC32 /= Chunk.CRC32 then
+                     Checksum_Error.Read := Computed_CRC32;
+                     Chunk.Data.Errors.Append (Checksum_Error);
+                  end if;
+               end;
+            else
+               declare
+                  No_Checksum_Error : Decoder_Error (CRC_NOT_COMPUTED);
+               begin
+                  Chunk.Data.Errors.Append (No_Checksum_Error);
+               end;
+
+               Set_Index (F, Chunk.FileIndex + Positive_Count (Chunk.Length + 4));
+            end if;
 
             if not Stream_Ended then
                Chunks.Append (Chunk);

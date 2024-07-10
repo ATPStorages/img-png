@@ -48,6 +48,7 @@ package PNG is
    type Decoder_Error_Type is (BAD_ORDER,
                                DUPLICATE_CHUNK,
                                CRC_MISMATCH,
+                               CRC_NOT_COMPUTED,
                                MUTUALLY_EXCLUSIVE);
 
    type Chunk_Type_Order is (BEFORE,
@@ -140,7 +141,9 @@ package PNG is
 
    --  Reads an image from a PNG file.
    --  This will not close the provided stream after finishing.
-   function  Read  (F : File_Type; S : Stream_Access)
+   function  Read  (F : File_Type;
+                    S : Stream_Access;
+                    Compute_CRC : Boolean)
                     return File;
    procedure Write (F : File;  S : Stream_Access);
 private
