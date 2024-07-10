@@ -143,8 +143,8 @@ package body PNG is
          Unsigned_32_ByteFlipper.FlipBytesBE (Chnk_Length);
 
          declare
-            Computed_CRC32          : Unsigned_32;
-            Constructed_Chunk       : Chunk (Unsigned_31 (Chnk_Length));
+            Computed_CRC32    : Unsigned_32 := Checksum.Full_32;
+            Constructed_Chunk : Chunk (Unsigned_31 (Chnk_Length));
          begin
             if Stream_Ended then
                declare
@@ -242,23 +242,32 @@ package body PNG is
             Unsigned_32_ByteFlipper.FlipBytesBE (Constructed_Chunk.CRC32);
 
             declare
-               Data : Checksum.Byte_Array (1 ..
-                                             Unsigned_32 (Chnk_Length) +
-                                             Unsigned_32 (Chunk_Type_Size_Bytes)
-                                          );
-
-               Calculated_CRC32 : Unsigned_32;
-               Checksum_Error   : Decoder_Error (CRC_MISMATCH);
+               To_Read        : Unsigned_32 :=
+                 Chnk_Length + Chunk_Type_Size_Bytes;
+               Checksum_Error : Decoder_Error (CRC_MISMATCH);
             begin
                Set_Index (F,
                           Constructed_Chunk.FileIndex - Chunk_Type_Size_Bytes);
-               Checksum.Byte_Array'Read (S, Data);
-               Calculated_CRC32 := Checksum.CRC.Compute_CRC (Local_CRC, Data);
+
+               loop
+                  declare
+                     Data : Checksum.Byte_Array
+                       (1 .. Unsigned_32'Min (To_Read, 8192));
+                  begin
+                     Checksum.Byte_Array'Read (S, Data);
+                     To_Read := @ - (Data'Size / 8);
+                     Checksum.CRC.Update_CRC (Computed_CRC32, Local_CRC, Data);
+                  end;
+
+                  exit when To_Read = 0;
+               end loop;
+
+               Computed_CRC32 := @ xor Checksum.Full_32;
 
                if
-                 Calculated_CRC32 /= Constructed_Chunk.CRC32
+                 Computed_CRC32 /= Constructed_Chunk.CRC32
                then
-                  Checksum_Error.Read := Calculated_CRC32;
+                  Checksum_Error.Read := Computed_CRC32;
                   Constructed_Chunk.Data.Errors.Append (Checksum_Error);
                end if;
 
