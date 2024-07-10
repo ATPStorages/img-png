@@ -117,7 +117,7 @@ package body PNG is
       Chnk_Length  : Unsigned_32;
       Chnk_Index   : Positive_Count;
 
-      New_File : aliased File;
+      New_File : File;
       Chunks   : Chunk_Vectors.Vector renames New_File.Chunks;
    begin
       if not Local_CRC_OK then
