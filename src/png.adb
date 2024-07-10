@@ -238,9 +238,6 @@ package body PNG is
                     F);
             <<NoDecode>>
 
-            Unsigned_32'Read (S, Constructed_Chunk.CRC32);
-            Unsigned_32_ByteFlipper.FlipBytesBE (Constructed_Chunk.CRC32);
-
             declare
                To_Read        : Unsigned_32 :=
                  Chnk_Length + Chunk_Type_Size_Bytes;
@@ -264,14 +261,15 @@ package body PNG is
 
                Computed_CRC32 := @ xor Checksum.Full_32;
 
+               Unsigned_32'Read (S, Constructed_Chunk.CRC32);
+               Unsigned_32_ByteFlipper.FlipBytesBE (Constructed_Chunk.CRC32);
+
                if
                  Computed_CRC32 /= Constructed_Chunk.CRC32
                then
                   Checksum_Error.Read := Computed_CRC32;
                   Constructed_Chunk.Data.Errors.Append (Checksum_Error);
                end if;
-
-               Set_Index (F, Index (F) + (Constructed_Chunk.CRC32'Size / 8));
             end;
 
             if not Stream_Ended then

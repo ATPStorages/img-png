@@ -10,7 +10,7 @@ package body zTXt is
    begin
       Self.Keyword := PNG.Decode_Null_String (S, Offset);
       PNG.Compression_Method'Read (S, Self.CompressionMethod);
-      Compression.ZLib.Data'Read (S, Self.Data);
+      --
    end Decode;
 
 end zTXt;

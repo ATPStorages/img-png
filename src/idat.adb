@@ -21,7 +21,7 @@ package body IDAT is
          end;
       end if;
 
-      Data_Definition'Read (S, Self);
+      -- Data_Definition'Read (S, Self);
    end Decode;
 
 end IDAT;
