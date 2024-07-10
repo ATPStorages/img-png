@@ -143,26 +143,23 @@ package body PNG is
          Unsigned_32_ByteFlipper.FlipBytesBE (Chnk_Length);
 
          declare
-            Computed_CRC32    : Unsigned_32 := Checksum.Full_32;
-            Constructed_Chunk : Chunk (Unsigned_31 (Chnk_Length));
+            Computed_CRC32 : Unsigned_32 := Checksum.Full_32;
+            Chunk          : PNG.Chunk (Unsigned_31 (Chnk_Length));
          begin
             if Stream_Ended then
                declare
                   End_Error : Decoder_Error (BAD_ORDER);
                begin
                   End_Error.Constraints.Insert (16#49454E44#, BEFORE);
-                  Constructed_Chunk.Data.Errors.Append (End_Error);
+                  Chunk.Data.Errors.Append (End_Error);
                end;
             end if;
 
-            Chunk_Type'Read
-              (S, Constructed_Chunk.TypeInfo.Raw);
-            Unsigned_32_ByteFlipper.FlipBytesBE
-              (Constructed_Chunk.TypeInfo.Raw);
+            Chunk_Type'Read (S, Chunk.TypeInfo.Raw);
+            Unsigned_32_ByteFlipper.FlipBytesBE (Chunk.TypeInfo.Raw);
 
-            Hydrate_Type_Info (Constructed_Chunk.TypeInfo);
-
-            Constructed_Chunk.FileIndex := Index (F);
+            Hydrate_Type_Info (Chunk.TypeInfo);
+            Chunk.FileIndex := Index (F);
 
             if
               IHDR_Present = False and then
@@ -173,69 +170,65 @@ package body PNG is
                   IHDR_Error : Decoder_Error (BAD_ORDER);
                begin
                   IHDR_Error.Constraints.Insert (IHDR.TypeRaw, BEFORE);
-                  Constructed_Chunk.Data.Errors.Append (IHDR_Error);
+                  Chunk.Data.Errors.Append (IHDR_Error);
                end;
             end if;
 
-            case Constructed_Chunk.TypeInfo.Raw is
+            case Chunk.TypeInfo.Raw is
                when IHDR.TypeRaw =>
-                  Constructed_Chunk.Data.Info := new IHDR.Data_Definition;
+                  Chunk.Data.Info := new IHDR.Data_Definition;
                   IHDR_Present := True;
                when PLTE.TypeRaw =>
-                  Constructed_Chunk.Data.Info := new PLTE.Data_Definition
+                  Chunk.Data.Info := new PLTE.Data_Definition
                     (Unsigned_31 (Chnk_Length), Unsigned_31 (Chnk_Length / 3));
                when IDAT.TypeRaw =>
-                  Constructed_Chunk.Data.Info := new IDAT.Data_Definition
+                  Chunk.Data.Info := new IDAT.Data_Definition
                     (Chnk_Length - 9);
                when 16#49454E44# => --  IEND
                   Stream_Ended := True;
                   goto NoDecode;
 
                when tIME.TypeRaw =>
-                  Constructed_Chunk.Data.Info := new tIME.Data_Definition;
+                  Chunk.Data.Info := new tIME.Data_Definition;
                when iCCP.TypeRaw =>
-                  Constructed_Chunk.Data.Info := new iCCP.Data_Definition;
+                  Chunk.Data.Info := new iCCP.Data_Definition;
                when cICP.TypeRaw =>
-                  Constructed_Chunk.Data.Info := new cICP.Data_Definition;
+                  Chunk.Data.Info := new cICP.Data_Definition;
 
                when bKGD.TypeRaw =>
-                  Constructed_Chunk.Data.Info := new bKGD.Data_Definition;
+                  Chunk.Data.Info := new bKGD.Data_Definition;
                when pHYs.TypeRaw =>
-                  Constructed_Chunk.Data.Info := new pHYs.Data_Definition;
+                  Chunk.Data.Info := new pHYs.Data_Definition;
                when zTXt.TypeRaw =>
-                  Constructed_Chunk.Data.Info := new zTXt.Data_Definition
+                  Chunk.Data.Info := new zTXt.Data_Definition
                     (Chnk_Length - 22);
                when iTXt.TypeRaw =>
-                  Constructed_Chunk.Data.Info := new iTXt.Data_Definition;
+                  Chunk.Data.Info := new iTXt.Data_Definition;
                when tEXt.TypeRaw =>
-                  Constructed_Chunk.Data.Info := new tEXt.Data_Definition;
+                  Chunk.Data.Info := new tEXt.Data_Definition;
                when eXIf.TypeRaw =>
-                  Constructed_Chunk.Data.Info := new eXIf.Data_Definition;
+                  Chunk.Data.Info := new eXIf.Data_Definition;
 
                when acTL.TypeRaw => --  APNG related chunks
-                  Constructed_Chunk.Data.Info := new acTL.Data_Definition;
+                  Chunk.Data.Info := new acTL.Data_Definition;
                when fcTL.TypeRaw =>
-                  Constructed_Chunk.Data.Info := new fcTL.Data_Definition;
+                  Chunk.Data.Info := new fcTL.Data_Definition;
                when fdAT.TypeRaw =>
-                  Constructed_Chunk.Data.Info := new fdAT.Data_Definition
+                  Chunk.Data.Info := new fdAT.Data_Definition
                     (Unsigned_31 (Chnk_Length) - (Unsigned_31'Size / 8));
 
                when others =>
-                  if not Constructed_Chunk.TypeInfo.Ancillary then
+                  if not Chunk.TypeInfo.Ancillary then
                      raise UNRECOGNIZED_CRITICAL_CHUNK_ERROR
                        with "Last Read:" &
                        Chunks.Last_Element.TypeInfo.Raw'Image &
                        " File Index @" & Index (F)'Image;
                   end if;
 
-                  Constructed_Chunk.Data.Info := new Chunk_Data_Definition;
+                  Chunk.Data.Info := new Chunk_Data_Definition;
             end case;
 
-            Decode (Constructed_Chunk.Data.Info.all,
-                    S,
-                    Constructed_Chunk,
-                    Chunks,
-                    F);
+            Decode (Chunk.Data.Info.all, S, Chunk, Chunks, F);
             <<NoDecode>>
 
             declare
@@ -243,8 +236,7 @@ package body PNG is
                  Chnk_Length + Chunk_Type_Size_Bytes;
                Checksum_Error : Decoder_Error (CRC_MISMATCH);
             begin
-               Set_Index (F,
-                          Constructed_Chunk.FileIndex - Chunk_Type_Size_Bytes);
+               Set_Index (F, Chunk.FileIndex - Chunk_Type_Size_Bytes);
 
                loop
                   declare
@@ -261,19 +253,17 @@ package body PNG is
 
                Computed_CRC32 := @ xor Checksum.Full_32;
 
-               Unsigned_32'Read (S, Constructed_Chunk.CRC32);
-               Unsigned_32_ByteFlipper.FlipBytesBE (Constructed_Chunk.CRC32);
+               Unsigned_32'Read (S, Chunk.CRC32);
+               Unsigned_32_ByteFlipper.FlipBytesBE (Chunk.CRC32);
 
-               if
-                 Computed_CRC32 /= Constructed_Chunk.CRC32
-               then
+               if Computed_CRC32 /= Chunk.CRC32 then
                   Checksum_Error.Read := Computed_CRC32;
-                  Constructed_Chunk.Data.Errors.Append (Checksum_Error);
+                  Chunk.Data.Errors.Append (Checksum_Error);
                end if;
             end;
 
             if not Stream_Ended then
-               Chunks.Append (Constructed_Chunk);
+               Chunks.Append (Chunk);
             end if;
          end;
       end loop;
