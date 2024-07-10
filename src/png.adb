@@ -152,7 +152,7 @@ package body PNG is
                declare
                   End_Error : Decoder_Error (BAD_ORDER);
                begin
-                  End_Error.Constraints.Insert (16#49454E44#, BEFORE);
+                  End_Error.Constraints.Insert (IEND_Chunk_Type, BEFORE);
                   Chunk.Data.Errors.Append (End_Error);
                end;
             end if;
@@ -186,7 +186,7 @@ package body PNG is
                when IDAT.TypeRaw =>
                   Chunk.Data.Info := new IDAT.Data_Definition
                     (Chnk_Length - 9);
-               when 16#49454E44# => --  IEND
+               when IEND_Chunk_Type => --  IEND
                   Stream_Ended := True;
                   goto NoDecode;
 
@@ -217,7 +217,7 @@ package body PNG is
                   Chunk.Data.Info := new fcTL.Data_Definition;
                when fdAT.TypeRaw =>
                   Chunk.Data.Info := new fdAT.Data_Definition
-                    (Unsigned_31 (Chnk_Length) - (Unsigned_31'Size / 8));
+                    (Unsigned_31 (Chnk_Length) - 4);
 
                when others =>
                   if not Chunk.TypeInfo.Ancillary then
@@ -274,7 +274,7 @@ package body PNG is
                Set_Index (F, Chunk.FileIndex + Positive_Count (Chunk.Length + 4));
             end if;
 
-            if not Stream_Ended then
+            if Chunk.TypeInfo.Raw /= IEND_Chunk_Type then
                Chunks.Append (Chunk);
             end if;
          end;

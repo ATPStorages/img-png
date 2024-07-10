@@ -21,6 +21,8 @@ package PNG is
    subtype Chunk_Type is Unsigned_32;
    Chunk_Type_Size_Bytes : constant := Chunk_Type'Size / 8;
 
+   IEND_Chunk_Type : constant Chunk_Type := 16#49454E44#;
+
    type Chunk_Type_Info is record
       Raw        : Chunk_Type;
       Ancillary  : Boolean;
