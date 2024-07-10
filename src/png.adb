@@ -100,9 +100,8 @@ package body PNG is
                      V : Chunk_Vectors.Vector;
                      F : File_Type)
    is
-      discard : Chunk_Data_Array (1 .. C.Length);
    begin
-      Chunk_Data_Array'Read (S, discard);
+      null;
    end Decode;
 
    Local_CRC    : Checksum.CRC.CRC_Array;
